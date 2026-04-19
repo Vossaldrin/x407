@@ -1,0 +1,151 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* fonts */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* surfaces */
+  --void:    #08080d;
+  --surface: #0e0e16;
+  --card:    #13131e;
+  --raised:  #1a1a28;
+  --overlay: #21212f;
+
+  /* borders */
+  --line:    rgba(255,255,255,0.06);
+  --line-md: rgba(255,255,255,0.10);
+  --line-hi: rgba(255,255,255,0.18);
+
+  /* text */
+  --ink:     #eeeef5;
+  --ink-2:   #9999bb;
+  --ink-3:   #55556a;
+
+  /* brand */
+  --iris:    #7c6df8;
+  --iris-2:  #b8aeff;
+  --iris-dim: rgba(124,109,248,0.15);
+
+  /* signals */
+  --emerald:  #00e5a0;
+  --emerald-dim: rgba(0,229,160,0.12);
+  --amber:    #f5c842;
+  --amber-dim: rgba(245,200,66,0.12);
+  --rose:     #f05070;
+  --rose-dim: rgba(240,80,112,0.12);
+  --sky:      #38bdf8;
+
+  /* semantic */
+  --positive: var(--emerald);
+  --warning:  var(--amber);
+  --negative: var(--rose);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 14px; }
+
+body {
+  background: var(--void);
+  color: var(--ink);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* ── Scrollbar ─────────────────────────────────────── */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line-md); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--line-hi); }
+
+/* ── Typography ────────────────────────────────────── */
+.font-mono { font-family: var(--font-mono); }
+
+/* ── Grid noise background ─────────────────────────── */
+.grid-bg {
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Keyframes ──────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+@keyframes scanline {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-fade-up    { animation: fadeUp 0.4s ease forwards; }
+.animate-fade-in    { animation: fadeIn 0.3s ease forwards; }
+.animate-pulse-dot  { animation: pulse 2s ease-in-out infinite; }
+
+/* staggered children */
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 60ms; }
+.stagger > *:nth-child(3) { animation-delay: 120ms; }
+.stagger > *:nth-child(4) { animation-delay: 180ms; }
+.stagger > *:nth-child(5) { animation-delay: 240ms; }
+.stagger > *:nth-child(6) { animation-delay: 300ms; }
+
+/* ── Skeleton loading ───────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, var(--raised) 25%, var(--overlay) 50%, var(--raised) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+/* ── Inputs ─────────────────────────────────────────── */
+input, textarea, select {
+  background: var(--raised);
+  border: 1px solid var(--line-md);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s, background 0.15s;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--iris);
+  background: var(--overlay);
+}
+input::placeholder { color: var(--ink-3); }
+
+/* ── Ticker tape ────────────────────────────────────── */
+.ticker-wrap { overflow: hidden; white-space: nowrap; }
+.ticker-inner { display: inline-flex; animation: ticker 30s linear infinite; }
+.ticker-inner:hover { animation-play-state: paused; }
+
+/* ── Glow effects ───────────────────────────────────── */
+.glow-iris   { box-shadow: 0 0 20px rgba(124,109,248,0.25); }
+.glow-green  { box-shadow: 0 0 20px rgba(0,229,160,0.2); }
