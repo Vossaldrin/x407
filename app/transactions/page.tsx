@@ -1,72 +1,50 @@
 'use client'
 import { useState } from 'react'
-import { StoreProvider, useStore, Transaction } from '@/lib/store'
-import { Card, CardHeader, Badge, Tabs, Btn } from '@/components/ui'
+import { useStore, Transaction } from '@/lib/store'
 
 type Filter = 'all' | 'out' | 'in' | 'blocked'
-const TABS = [
-  { key: 'all',     label: 'All' },
+const TABS: { key: Filter; label: string }[] = [
+  { key: 'all',     label: 'All'      },
   { key: 'out',     label: 'Payments' },
-  { key: 'in',      label: 'Income' },
-  { key: 'blocked', label: 'Blocked' },
+  { key: 'in',      label: 'Income'   },
+  { key: 'blocked', label: 'Blocked'  },
 ]
 
 function TxRow({ tx, last }: { tx: Transaction; last: boolean }) {
   const isBlocked = tx.status === 'blocked'
   const isIn      = tx.type === 'in'
   return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: '32px 1fr auto auto auto',
-      alignItems: 'center', gap: 14, padding: '12px 18px',
-      borderBottom: last ? 'none' : '1px solid var(--line)',
-      transition: 'background 0.1s',
-    }}
-      onMouseEnter={e => (e.currentTarget.style.background = 'var(--raised)')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-    >
-      {/* Icon */}
-      <div style={{
-        width: 32, height: 32, borderRadius: 8,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0,
-        background: isBlocked ? 'var(--rose-dim)' : isIn ? 'var(--emerald-dim)' : 'rgba(255,255,255,0.05)',
-        color: isBlocked ? 'var(--rose)' : isIn ? 'var(--emerald)' : 'var(--ink-2)',
-      }}>
+    <div className="tx-row" style={{ borderBottom: last ? 'none' : undefined, display: 'grid', gridTemplateColumns: '30px 1fr auto auto auto', alignItems: 'center', gap: 12 }}>
+      <div className={`tx-icon ${isBlocked ? 'tx-blk' : isIn ? 'tx-in' : 'tx-out'}`}>
         {isBlocked ? '⊘' : isIn ? '↓' : '↑'}
       </div>
-
-      {/* Name + agent */}
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.name}</div>
-        <div style={{ fontSize: 10, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
-          {tx.agentName} · {tx.chain} · {tx.address}
-        </div>
+        <div style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.name}</div>
+        <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 2 }}>{tx.agentName} · {tx.chain} · {tx.address}</div>
       </div>
-
-      {/* Status */}
       <div>
-        {tx.status === 'blocked' && <Badge color="rose">blocked</Badge>}
-        {tx.status === 'confirmed' && <Badge color="emerald">confirmed</Badge>}
-        {tx.status === 'pending'   && <Badge color="amber">pending</Badge>}
+        {tx.status === 'blocked'   && <span className="badge badge-yellow">blocked</span>}
+        {tx.status === 'confirmed' && <span className="badge badge-green">confirmed</span>}
+        {tx.status === 'pending'   && <span className="badge badge-gray">pending</span>}
       </div>
-
-      {/* Hash */}
-      <div style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--ink-3)' }}>
-        {tx.hash ? tx.hash : '—'}
+      <div className="mono" style={{ fontSize: 10, color: 'var(--ink3)' }}>
+        {tx.hash && tx.real ? (
+          <a href={`https://basescan.org/tx/${tx.hash}`} target="_blank" rel="noreferrer" style={{ color: 'var(--green)' }}>
+            {tx.hash.slice(0, 10)}… ↗
+          </a>
+        ) : (tx.hash ?? '—')}
       </div>
-
-      {/* Amount + time */}
-      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <div style={{ fontSize: 13, fontFamily: 'var(--font-mono)', fontWeight: 500,
-          color: isBlocked ? 'var(--ink-3)' : isIn ? 'var(--emerald)' : 'var(--rose)' }}>
+      <div style={{ textAlign: 'right' }}>
+        <div className="mono" style={{ fontSize: 12.5, fontWeight: 500, color: isBlocked ? 'var(--ink3)' : isIn ? 'var(--green)' : 'var(--rose)' }}>
           {isBlocked ? '—' : `${isIn ? '+' : '-'}$${tx.amount.toFixed(2)}`}
         </div>
-        <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>{tx.timestamp}</div>
+        <div style={{ fontSize: 10, color: 'var(--ink3)', marginTop: 2 }}>{tx.timestamp}</div>
       </div>
     </div>
   )
 }
 
-function TxContent() {
+export default function TransactionsPage() {
   const { transactions } = useStore()
   const [filter, setFilter] = useState<Filter>('all')
 
@@ -81,43 +59,59 @@ function TxContent() {
   const blockedCount = transactions.filter(t => t.status === 'blocked').length
 
   return (
-    <div style={{ padding: 24 }} className="animate-fade-up">
-      {/* Mini stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 20 }}>
-        <div style={{ padding: '14px 18px', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10 }}>
-          <div style={{ fontSize: 10, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>TOTAL PAID OUT</div>
-          <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--rose)' }}>-${totalOut.toFixed(2)}</div>
+    <div className="animate-up gap-pad">
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 32, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: 8 }}>Transactions</h1>
+        <p style={{ fontSize: 14, color: 'var(--ink3)' }}>Full ledger of agent and wallet activity.</p>
+      </div>
+
+      {/* Stats */}
+      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 20 }}>
+        <div className="stat-card">
+          <div className="stat-label">Total paid out</div>
+          <div className="stat-value text-red">-${totalOut.toFixed(2)}</div>
         </div>
-        <div style={{ padding: '14px 18px', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10 }}>
-          <div style={{ fontSize: 10, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>TOTAL INCOME</div>
-          <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--emerald)' }}>+${totalIn.toFixed(2)}</div>
+        <div className="stat-card">
+          <div className="stat-label">Total income</div>
+          <div className="stat-value text-green">+${totalIn.toFixed(2)}</div>
         </div>
-        <div style={{ padding: '14px 18px', background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 10 }}>
-          <div style={{ fontSize: 10, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginBottom: 6 }}>BLOCKED TXS</div>
-          <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--rose)' }}>{blockedCount}</div>
+        <div className="stat-card">
+          <div className="stat-label">Blocked</div>
+          <div className="stat-value" style={{ color: blockedCount > 0 ? 'var(--rose)' : 'var(--ink)' }}>{blockedCount}</div>
         </div>
       </div>
 
-      <Card>
-        <CardHeader
-          left={<><span style={{ fontSize: 14, fontWeight: 600 }}>Transactions</span><span style={{ fontSize: 11, color: 'var(--ink-2)' }}>x402 autonomous payments · all agents</span></>}
-          right={<Btn size="sm">Export CSV</Btn>}
-        />
-        <Tabs tabs={TABS} active={filter} onChange={v => setFilter(v as Filter)} />
-        <div>
-          {filtered.length === 0 ? (
-            <div style={{ padding: '40px 20px', textAlign: 'center', fontSize: 13, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
-              No transactions in this category
-            </div>
-          ) : (
-            filtered.map((tx, i) => <TxRow key={tx.id} tx={tx} last={i === filtered.length - 1} />)
-          )}
+      <div className="card">
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '0.5px solid var(--line)' }}>
+          <div>
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>Transactions</span>
+            <span style={{ fontSize: 11, color: 'var(--ink2)', marginLeft: 8 }}>x402 autonomous payments · all agents</span>
+          </div>
+          <button className="btn-ghost" style={{ fontSize: 11 }}>Export CSV</button>
         </div>
-      </Card>
+
+        {/* Filter tabs */}
+        <div style={{ display: 'flex', padding: '0 18px', borderBottom: '0.5px solid var(--line)', gap: 2 }}>
+          {TABS.map(t => (
+            <button key={t.key} onClick={() => setFilter(t.key)} style={{
+              padding: '10px 0', marginRight: 16, fontSize: 12.5, cursor: 'pointer', fontFamily: 'var(--font)',
+              color: filter === t.key ? 'var(--green)' : 'var(--ink3)',
+              background: 'none', border: 'none', borderBottom: filter === t.key ? '2px solid var(--green)' : '2px solid transparent',
+              fontWeight: filter === t.key ? 500 : 400,
+            }}>{t.label}</button>
+          ))}
+        </div>
+
+        {/* Rows */}
+        {filtered.length === 0 ? (
+          <div style={{ padding: '40px 20px', textAlign: 'center', fontSize: 13, color: 'var(--ink3)' }}>
+            No transactions in this category
+          </div>
+        ) : (
+          filtered.map((tx, i) => <TxRow key={tx.id} tx={tx} last={i === filtered.length - 1} />)
+        )}
+      </div>
     </div>
   )
-}
-
-export default function TransactionsPage() {
-  return <StoreProvider><TxContent /></StoreProvider>
 }

@@ -6,10 +6,10 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
     const params = searchParams.toString()
-    const res = await fetch(`${PYTHON_API}/transactions${params ? '?' + params : ''}`, { cache: 'no-store' })
+    const res = await fetch(`${PYTHON_API}/marketplace${params ? '?' + params : ''}`, { cache: 'no-store' })
     const data = await res.json()
     return NextResponse.json(data)
   } catch {
-    return NextResponse.json({ transactions: [], error: 'Backend offline' }, { status: 503 })
+    return NextResponse.json({ templates: [], error: 'Backend offline' }, { status: 503 })
   }
 }

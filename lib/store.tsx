@@ -1,8 +1,9 @@
 'use client'
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
 
-// ── Types ────────────────────────────────────────────────────────────────────
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
+// ── Types ─────────────────────────────────────────────────────────────────────
 export type Chain = 'Base' | 'Ethereum' | 'Arbitrum' | 'Optimism' | 'Polygon'
 export type AgentStatus = 'active' | 'idle' | 'expired' | 'paused'
 
@@ -21,9 +22,12 @@ export interface Agent {
   expiry: string
   ownerWallet?: string
   initials: string
-  color: 'iris' | 'emerald' | 'amber' | 'rose'
+  color: 'emerald' | 'amber' | 'iris' | 'rose'
   createdAt: string
   txCount: number
+  templateId?: string
+  emoji?: string
+  category?: string
 }
 
 export interface Transaction {
@@ -33,11 +37,28 @@ export interface Transaction {
   agentName: string
   type: 'out' | 'in'
   amount: number
-  chain: Chain
+  chain: string
   address: string
   timestamp: string
   status: 'confirmed' | 'pending' | 'blocked'
-  hash?: string
+  hash?: string | null
+  reason?: string
+  real?: boolean
+}
+
+export interface PaymentQuote {
+  agent: Agent
+  resourceUrl: string
+  quote: {
+    scheme: string
+    network: string
+    amount: string
+    asset: string
+    payTo: string
+    resource: string
+    description: string
+    maxTimeoutSeconds: number
+  }
 }
 
 export interface Token {
@@ -45,104 +66,239 @@ export interface Token {
   name: string
   amount: number
   usdValue: number
-  chains: Chain[]
-  icon: string
+  chains: string[]
   change24h: number
 }
 
-// ── Seed data ────────────────────────────────────────────────────────────────
+export interface MarketplaceTemplate {
+  id: string
+  name: string
+  emoji: string
+  category: string
+  description: string
+  price: string
+  rating: number
+  hiredCount: number
+  defaultActions: string[]
+  defaultDailyLimit: number
+  defaultPerTxLimit: number
+  color: string
+  featured: boolean
+}
 
+// ── Seed data (shown while backend loads / offline) ───────────────────────────
 const SEED_AGENTS: Agent[] = [
   {
-    id: 'ag_01', name: 'DataFetcher Alpha', shortAddr: '0x4f3a…9b2c',
+    id: 'ag_01', name: 'DeFi Trader', shortAddr: '0x4f3a…9b2c',
     fullAddr: '0x4f3a8c2d1e9f7b6a3c5d8e1f2a4b7c9d0e3f2b9c',
-    chain: 'Base', dailyLimit: 500, perTxLimit: 50, spentToday: 142,
-    balance: 250, status: 'active',
-    allowedActions: ['pay_api', 'fetch_data', 'buy_compute'],
-    expiry: '2025-12-31', initials: 'DA', color: 'iris',
-    createdAt: '2024-11-01', txCount: 148,
+    chain: 'Base', dailyLimit: 500, perTxLimit: 100, spentToday: 200,
+    balance: 850, status: 'active', allowedActions: ['trade','swap','fetch_data','pay_api'],
+    expiry: '2026-12-31', initials: 'DT', color: 'emerald',
+    createdAt: '2025-01-10', txCount: 148, emoji: '📈', category: 'Finance',
   },
   {
-    id: 'ag_02', name: 'TradeBot v2', shortAddr: '0x8c11…de4f',
+    id: 'ag_02', name: 'Grocery Scout', shortAddr: '0x8c11…de4f',
     fullAddr: '0x8c11f3a2d9e7b6c4a5d8e1f2a4b7c9d0e3f2bde4',
-    chain: 'Arbitrum', dailyLimit: 2000, perTxLimit: 200, spentToday: 830,
-    balance: 1200, status: 'active',
-    allowedActions: ['trade', 'pay_api', 'fetch_data', 'swap'],
-    expiry: '2026-03-15', initials: 'TB', color: 'emerald',
-    createdAt: '2024-10-15', txCount: 412,
+    chain: 'Ethereum', dailyLimit: 150, perTxLimit: 50, spentToday: 108,
+    balance: 220, status: 'active', allowedActions: ['shop','pay_api','fetch_data'],
+    expiry: '2026-12-31', initials: 'GS', color: 'amber',
+    createdAt: '2025-01-15', txCount: 412, emoji: '🛒', category: 'Shopping',
   },
   {
-    id: 'ag_03', name: 'APIBroker Pro', shortAddr: '0x77f2…cc8a',
+    id: 'ag_03', name: 'Budget Guard', shortAddr: '0x77f2…cc8a',
     fullAddr: '0x77f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8ecc8',
-    chain: 'Ethereum', dailyLimit: 300, perTxLimit: 30, spentToday: 0,
-    balance: 89.4, status: 'idle',
-    allowedActions: ['pay_api', 'broker_data'],
-    expiry: '2025-11-01', initials: 'AB', color: 'amber',
-    createdAt: '2024-09-20', txCount: 67,
-  },
-  {
-    id: 'ag_04', name: 'ScannerBot', shortAddr: '0x3b9e…12fa',
-    fullAddr: '0x3b9e4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f012f',
-    chain: 'Base', dailyLimit: 100, perTxLimit: 10, spentToday: 0,
-    balance: 0, status: 'expired',
-    allowedActions: ['scan', 'fetch_data'],
-    expiry: '2024-12-01', initials: 'SC', color: 'rose',
-    createdAt: '2024-08-01', txCount: 23,
+    chain: 'Arbitrum', dailyLimit: 200, perTxLimit: 50, spentToday: 0,
+    balance: 180, status: 'idle', allowedActions: ['pay_api','fetch_data','cancel_subscription'],
+    expiry: '2026-12-31', initials: 'BG', color: 'iris',
+    createdAt: '2025-02-01', txCount: 67, emoji: '💰', category: 'Finance',
   },
 ]
 
 const SEED_TXS: Transaction[] = [
-  { id: 'tx_01', name: 'OpenAI GPT-4 API',    agentId: 'ag_01', agentName: 'DataFetcher Alpha', type: 'out', amount: 4.20,  chain: 'Base',     address: '0x4f3a…9b2c', timestamp: '2m ago',  status: 'confirmed', hash: '0xabc1' },
-  { id: 'tx_02', name: 'Serper Search API',   agentId: 'ag_02', agentName: 'TradeBot v2',       type: 'out', amount: 0.50,  chain: 'Arbitrum', address: '0x8c11…de4f', timestamp: '18m ago', status: 'confirmed', hash: '0xabc2' },
-  { id: 'tx_03', name: 'Arbitrage Reward',    agentId: 'ag_02', agentName: 'TradeBot v2',       type: 'in',  amount: 12.00, chain: 'Arbitrum', address: '0x8c11…de4f', timestamp: '1h ago',  status: 'confirmed', hash: '0xabc3' },
-  { id: 'tx_04', name: 'Infura RPC',          agentId: 'ag_01', agentName: 'DataFetcher Alpha', type: 'out', amount: 1.80,  chain: 'Ethereum', address: '0x4f3a…9b2c', timestamp: '3h ago',  status: 'confirmed', hash: '0xabc4' },
-  { id: 'tx_05', name: 'Anthropic API',       agentId: 'ag_03', agentName: 'APIBroker Pro',     type: 'out', amount: 8.40,  chain: 'Ethereum', address: '0x77f2…cc8a', timestamp: '5h ago',  status: 'confirmed', hash: '0xabc5' },
-  { id: 'tx_06', name: 'Data Sale Revenue',   agentId: 'ag_01', agentName: 'DataFetcher Alpha', type: 'in',  amount: 25.00, chain: 'Base',     address: '0x4f3a…9b2c', timestamp: '8h ago',  status: 'confirmed', hash: '0xabc6' },
-  { id: 'tx_07', name: 'Daily Limit Breach',  agentId: 'ag_04', agentName: 'ScannerBot',        type: 'out', amount: 0,     chain: 'Base',     address: '0x3b9e…12fa', timestamp: '12h ago', status: 'blocked'   },
-  { id: 'tx_08', name: 'Coingecko Price API', agentId: 'ag_02', agentName: 'TradeBot v2',       type: 'out', amount: 0.10,  chain: 'Arbitrum', address: '0x8c11…de4f', timestamp: '14h ago', status: 'confirmed', hash: '0xabc8' },
+  { id: 'tx_01', name: 'Uniswap ETH → USDC', agentId: 'ag_01', agentName: 'DeFi Trader', type: 'out', amount: 120, chain: 'Base', address: '0x4f3a…9b2c', timestamp: '2m ago', status: 'confirmed', hash: '0xabc1' },
+  { id: 'tx_02', name: 'Tesco weekly shop', agentId: 'ag_02', agentName: 'Grocery Scout', type: 'out', amount: 72.4, chain: 'Ethereum', address: '0x8c11…de4f', timestamp: '1h ago', status: 'confirmed', hash: '0xabc2' },
+  { id: 'tx_03', name: 'Arbitrage reward', agentId: 'ag_01', agentName: 'DeFi Trader', type: 'in', amount: 18.5, chain: 'Base', address: '0x4f3a…9b2c', timestamp: '3h ago', status: 'confirmed', hash: '0xabc3' },
+  { id: 'tx_04', name: 'Daily limit exceeded', agentId: 'ag_02', agentName: 'Grocery Scout', type: 'out', amount: 0, chain: 'Ethereum', address: '0x8c11…de4f', timestamp: '5h ago', status: 'blocked' },
+  { id: 'tx_05', name: 'Coingecko API', agentId: 'ag_01', agentName: 'DeFi Trader', type: 'out', amount: 0.10, chain: 'Base', address: '0x4f3a…9b2c', timestamp: '8h ago', status: 'confirmed', hash: '0xabc5' },
 ]
 
 const SEED_TOKENS: Token[] = [
-  { symbol: 'ETH',  name: 'Ethereum', amount: 1.842,   usdValue: 6210.40, chains: ['Base','Arbitrum','Ethereum'], icon: 'Ξ', change24h: +2.4  },
-  { symbol: 'USDC', name: 'USDC',     amount: 2400.00, usdValue: 2400.00, chains: ['Base','Ethereum'],           icon: '$', change24h: +0.01 },
-  { symbol: 'USDT', name: 'USDT',     amount: 841.20,  usdValue: 841.20,  chains: ['Arbitrum'],                  icon: '₮', change24h: -0.02 },
+  { symbol: 'ETH',  name: 'Ethereum', amount: 1.842,   usdValue: 6210.40, chains: ['Base','Arbitrum','Ethereum'], change24h: 2.4 },
+  { symbol: 'USDC', name: 'USDC',     amount: 2400.00, usdValue: 2400.00, chains: ['Base','Ethereum'],            change24h: 0.01 },
+  { symbol: 'USDT', name: 'USDT',     amount: 841.20,  usdValue: 841.20,  chains: ['Arbitrum'],                   change24h: -0.02 },
 ]
 
 // ── Context ───────────────────────────────────────────────────────────────────
-
 interface Store {
   agents: Agent[]
   transactions: Transaction[]
   tokens: Token[]
+  marketplace: MarketplaceTemplate[]
+  loading: boolean
   addAgent: (a: Agent) => void
   updateAgent: (id: string, patch: Partial<Agent>) => void
+  refreshAgents: () => Promise<void>
+  refreshTransactions: () => Promise<void>
+  hireAgent: (templateId: string, chain: string, expiry: string, overrides?: { dailyLimit?: number; perTxLimit?: number; actions?: string[] }) => Promise<{ agent: Agent; privateKey: string } | null>
+  createAgent: (body: object) => Promise<{ agent: Agent; privateKey: string } | null>
+  quotePayment: (agentId: string, resourceUrl?: string) => Promise<PaymentQuote | null>
+  executePayment: (agentId: string, resourceUrl: string, txHash: string) => Promise<{ ok: boolean; transaction?: Transaction; resource?: any; error?: string }>
+  simulatePayment: (agentId: string, recipient: string, amount: number, description: string) => Promise<{ ok: boolean; transaction?: Transaction; error?: string }>
 }
 
 const Ctx = createContext<Store>({
   agents: SEED_AGENTS, transactions: SEED_TXS, tokens: SEED_TOKENS,
+  marketplace: [], loading: false,
   addAgent: () => {}, updateAgent: () => {},
+  refreshAgents: async () => {}, refreshTransactions: async () => {},
+  hireAgent: async () => null, createAgent: async () => null,
+  quotePayment: async () => null, executePayment: async () => ({ ok: false, error: 'not initialized' }),
+  simulatePayment: async () => ({ ok: false, error: 'not initialized' }),
 })
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [agents, setAgents]           = useState<Agent[]>(SEED_AGENTS)
-  const [transactions]                = useState<Transaction[]>(SEED_TXS)
+  const [transactions, setTransactions] = useState<Transaction[]>(SEED_TXS)
   const [tokens]                      = useState<Token[]>(SEED_TOKENS)
+  const [marketplace, setMarketplace] = useState<MarketplaceTemplate[]>([])
+  const [loading, setLoading]         = useState(false)
+
+  const refreshAgents = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/agents`)
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.agents?.length > 0) setAgents(data.agents)
+    } catch { /* backend offline — keep seed data */ }
+  }, [])
+
+  const refreshTransactions = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/transactions`)
+      if (!res.ok) return
+      const data = await res.json()
+      if (data.transactions?.length > 0) setTransactions(data.transactions)
+    } catch { /* offline */ }
+  }, [])
+
+  const loadMarketplace = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/marketplace`)
+      if (!res.ok) return
+      const data = await res.json()
+      setMarketplace(data.templates || [])
+    } catch { /* offline */ }
+  }, [])
+
+  useEffect(() => {
+    setLoading(true)
+    Promise.all([refreshAgents(), refreshTransactions(), loadMarketplace()])
+      .finally(() => setLoading(false))
+  }, [refreshAgents, refreshTransactions, loadMarketplace])
 
   const addAgent    = useCallback((a: Agent) => setAgents(p => [a, ...p]), [])
   const updateAgent = useCallback((id: string, patch: Partial<Agent>) =>
     setAgents(p => p.map(a => a.id === id ? { ...a, ...patch } : a)), [])
 
-  return <Ctx.Provider value={{ agents, transactions, tokens, addAgent, updateAgent }}>{children}</Ctx.Provider>
+  const hireAgent = useCallback(async (
+    templateId: string, chain: string, expiry: string,
+    overrides?: { dailyLimit?: number; perTxLimit?: number; actions?: string[] }
+  ) => {
+    try {
+      const res = await fetch(`${API}/marketplace/hire`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ templateId, chain, expiry, ...overrides }),
+      })
+      if (!res.ok) return null
+      const data = await res.json()
+      addAgent(data.agent)
+      return data
+    } catch { return null }
+  }, [addAgent])
+
+  const createAgent = useCallback(async (body: object) => {
+    try {
+      const res = await fetch(`${API}/agents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) return null
+      const data = await res.json()
+      addAgent(data.agent)
+      return data
+    } catch { return null }
+  }, [addAgent])
+
+  const quotePayment = useCallback(async (agentId: string, resourceUrl?: string) => {
+    try {
+      const res = await fetch(`${API}/payments/quote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId, resourceUrl }),
+      })
+      if (!res.ok) return null
+      return await res.json()
+    } catch { return null }
+  }, [])
+
+  const executePayment = useCallback(async (agentId: string, resourceUrl: string, txHash: string) => {
+    try {
+      const res = await fetch(`${API}/payments/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId, resourceUrl, txHash }),
+      })
+      const data = await res.json()
+      if (!res.ok) return { ok: false, error: data.detail || 'Payment execution failed' }
+      if (data.transaction) setTransactions(p => [data.transaction, ...p])
+      if (data.transaction) updateAgent(agentId, {
+        spentToday: (agents.find(a => a.id === agentId)?.spentToday || 0) + data.transaction.amount,
+      })
+      return { ok: true, transaction: data.transaction, resource: data.resource }
+    } catch {
+      return { ok: false, error: 'Backend offline' }
+    }
+  }, [agents, updateAgent])
+
+  const simulatePayment = useCallback(async (agentId: string, recipient: string, amount: number, description: string) => {
+    try {
+      const res = await fetch(`${API}/payments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId, recipient, amount, description, chain: agents.find(a => a.id === agentId)?.chain || 'Base' }),
+      })
+      const data = await res.json()
+      if (!res.ok) return { ok: false, error: data.detail || 'Payment failed' }
+      setTransactions(p => [data.transaction, ...p])
+      updateAgent(agentId, { spentToday: (agents.find(a => a.id === agentId)?.spentToday || 0) + amount })
+      return { ok: true, transaction: data.transaction }
+    } catch {
+      return { ok: false, error: 'Backend offline' }
+    }
+  }, [agents, updateAgent])
+
+  return (
+    <Ctx.Provider value={{
+      agents, transactions, tokens, marketplace, loading,
+      addAgent, updateAgent, refreshAgents, refreshTransactions,
+      hireAgent, createAgent, quotePayment, executePayment, simulatePayment,
+    }}>
+      {children}
+    </Ctx.Provider>
+  )
 }
 
 export const useStore = () => useContext(Ctx)
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
 export function genAddress(): string {
   return '0x' + Array.from({ length: 40 }, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('')
 }
-
 export function shortAddr(addr: string): string {
   return addr.slice(0, 6) + '…' + addr.slice(-4)
+}
+export function accentColor(color: string): string {
+  return { emerald: '#4CAF50', amber: '#FFD600', iris: '#7C6DF8', rose: '#F87171' }[color] ?? '#4CAF50'
 }

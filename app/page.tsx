@@ -1,170 +1,239 @@
 'use client'
-import { StoreProvider, useStore } from '@/lib/store'
-import { Stat, Card, CardHeader, Badge, Avatar, StatusDot, Progress, Btn } from '@/components/ui'
+import { useEffect, useRef, useState, MouseEvent } from 'react'
 import Link from 'next/link'
+import { useStore } from '@/lib/store'
+import { useReveal } from '@/lib/use-reveal'
+import { Cpu, Lock, Zap, BarChart3, Layers, ArrowRight, ChevronRight, Star, Wallet } from 'lucide-react'
 
-function PassportGlyphCard({ agent }: { agent: ReturnType<typeof useStore>['agents'][0] }) {
-  const accentColor = { iris: 'var(--iris)', emerald: 'var(--emerald)', amber: 'var(--amber)', rose: 'var(--rose)' }[agent.color]
+const FEATURES = [
+  { icon: <Cpu size={17} />, title: 'Agents with real wallets', desc: 'Every agent is provisioned with an isolated, cryptographically-bound wallet on deployment. It can spend, receive, and transact — autonomously.' },
+  { icon: <Lock size={17} />, title: 'You set the rules', desc: 'Define daily spend limits, per-transaction caps, allowed action types, and expiry dates. Agents operate strictly within your signed policy.' },
+  { icon: <Wallet size={17} />, title: 'Real x402 payments', desc: 'Agents pay for APIs and compute with real on-chain USDC, verified against Base mainnet before anything unlocks.' },
+  { icon: <BarChart3 size={17} />, title: 'Full audit trail', desc: 'Every transaction — confirmed, pending, or blocked — is logged with a real transaction hash you can verify yourself on Basescan.' },
+  { icon: <Zap size={17} />, title: 'Configure before you deploy', desc: 'Set spend limits and allowed actions right in the hire flow — no code required, no infrastructure to manage.' },
+  { icon: <Layers size={17} />, title: 'Twelve ready-made agents', desc: 'Research, DeFi trading, travel, expense optimization, dev tooling, and more — or build your own from scratch.' },
+]
+
+const STEPS = [
+  { n: '01', title: 'Browse the marketplace', body: "Search by category. Every agent shows its real default limits and allowed actions before you commit." },
+  { n: '02', title: 'Set your policy', body: 'Configure daily limits, per-transaction caps, allowed actions, and expiry. Your agent can’t exceed what you sign off on.' },
+  { n: '03', title: 'Deploy and monitor', body: 'Hire in one click, fund the wallet, and track every transaction — confirmed or blocked — in real time.' },
+]
+
+function LandingNav() {
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  useEffect(() => {
+    const current = document.documentElement.getAttribute('data-theme')
+    if (current === 'light' || current === 'dark') setTheme(current)
+  }, [])
+  const toggle = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    document.documentElement.setAttribute('data-theme', next)
+  }
   return (
-    <div style={{
-      background: 'linear-gradient(160deg, var(--raised) 0%, var(--overlay) 100%)',
-      border: '1px solid var(--line-md)', borderRadius: 14, padding: 22,
-      position: 'relative', overflow: 'hidden',
-    }}>
-      {/* background glyph */}
-      <div style={{
-        position: 'absolute', right: -10, top: -10, fontSize: 100, opacity: 0.04,
-        fontFamily: 'var(--font-mono)', fontWeight: 700, lineHeight: 1, pointerEvents: 'none',
-        color: accentColor,
-      }}>⬡</div>
-
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
-        <div>
-          <div style={{ fontSize: 9, letterSpacing: '2px', textTransform: 'uppercase', color: accentColor, marginBottom: 5, fontFamily: 'var(--font-mono)' }}>ARNO PASSPORT</div>
-          <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.3px' }}>{agent.name}</div>
+    <nav className="landing-nav">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+        <div style={{ width: 24, height: 24, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--red), var(--red-hover))' }}>
+          <Cpu size={12} color="#fff" />
         </div>
-        <div style={{ width: 32, height: 24, borderRadius: 4, background: `linear-gradient(135deg, ${accentColor}, var(--amber))`, opacity: 0.7 }} />
+        <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.3px' }}>Arnold</span>
       </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-        {[['Chain', agent.chain], ['Limit/day', `$${agent.dailyLimit}`], ['Address', agent.shortAddr], ['Expires', agent.expiry]].map(([k, v]) => (
-          <div key={k}>
-            <div style={{ fontSize: 9.5, letterSpacing: '1px', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 3, fontFamily: 'var(--font-mono)' }}>{k}</div>
-            <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--ink)' }}>{v}</div>
-          </div>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button className="theme-btn" onClick={toggle} title="Toggle theme" aria-label="Toggle theme">
+          {theme === 'dark' ? '☀' : '☾'}
+        </button>
+        <Link href="/marketplace" className="btn-primary">Open app</Link>
       </div>
-
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--ink-3)', marginBottom: 6, fontFamily: 'var(--font-mono)' }}>
-          <span>DAILY USAGE</span>
-          <span>${agent.spentToday} / ${agent.dailyLimit}</span>
-        </div>
-        <Progress value={agent.spentToday} max={agent.dailyLimit} />
-      </div>
-
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-        {agent.allowedActions.map(a => (
-          <span key={a} style={{ padding: '2px 8px', borderRadius: 4, fontSize: 10, fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,0.05)', color: 'var(--ink-2)', border: '1px solid var(--line)' }}>{a}</span>
-        ))}
-      </div>
-    </div>
+    </nav>
   )
 }
 
-function Overview() {
-  const { agents, transactions } = useStore()
-  const active  = agents.filter(a => a.status === 'active').length
-  const spent   = agents.reduce((s, a) => s + a.spentToday, 0)
-  const txCount = transactions.filter(t => t.status === 'confirmed').length
-  const blocked = transactions.filter(t => t.status === 'blocked').length
-  const recent  = transactions.slice(0, 5)
-  const hero    = agents.find(a => a.status === 'active') ?? agents[0]
-
+function DashPreview({ templates }: { templates: { emoji?: string; name: string; rating: number; price: string }[] }) {
+  const navItems = ['Marketplace', 'My Agents', 'Create Agent', 'Wallet', 'Transactions']
   return (
-    <div style={{ padding: 24 }} className="animate-fade-up">
-      {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 24 }} className="stagger">
-        <Stat label="Active Agents"    value={String(active)}       delta="+2 this week" deltaUp accent="var(--iris)" />
-        <Stat label="Spent Today"      value={`$${spent}`}          delta="Within limits" deltaUp accent="var(--emerald)" />
-        <Stat label="Payments (24h)"   value={String(txCount)}      delta="+12 today" deltaUp accent="var(--amber)" />
-        <Stat label="Blocked"          value={String(blocked)}      delta="Over limit" accent="var(--rose)" />
+    <div className="dash-preview">
+      <div className="dash-preview-bar">
+        <div className="dash-preview-dots"><span /><span /><span /></div>
+        <div className="dash-preview-url"><span>arnold.app/marketplace</span></div>
       </div>
-
-      {/* Main grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 20 }}>
-
-        {/* Agent roster */}
-        <Card>
-          <CardHeader
-            left={<><span style={{ fontSize: 14, fontWeight: 600 }}>Agent Roster</span><span style={{ fontSize: 11, color: 'var(--ink-2)' }}>All deployed passports</span></>}
-            right={<Badge color="emerald">{active} active</Badge>}
-          />
-          <div>
-            {agents.map((agent, i) => (
-              <Link key={agent.id} href="/passports" style={{ textDecoration: 'none', display: 'block' }}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 14, padding: '13px 18px',
-                  borderBottom: i < agents.length - 1 ? '1px solid var(--line)' : 'none',
-                  transition: 'background 0.1s', cursor: 'pointer',
-                }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--raised)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <Avatar initials={agent.initials} color={agent.color} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-                      <StatusDot status={agent.status} />
-                      <span style={{ fontSize: 13, fontWeight: 500 }}>{agent.name}</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)' }}>
-                      {agent.shortAddr} · {agent.chain} · {agent.txCount} txs
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: 13, fontFamily: 'var(--font-mono)', fontWeight: 500 }}>${agent.balance.toLocaleString('en', { minimumFractionDigits: 2 })}</div>
-                    <div style={{ marginTop: 4, minWidth: 80 }}><Progress value={agent.spentToday} max={agent.dailyLimit} /></div>
-                  </div>
+      <div className="dash-preview-body">
+        <div className="dash-mini-sidebar">
+          {navItems.map((item, i) => (
+            <div key={item} className={`dash-mini-item ${i === 0 ? 'on' : ''}`}>
+              <span className="dash-mini-dot" />{item}
+            </div>
+          ))}
+        </div>
+        <div className="dash-mini-content">
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink)', marginBottom: 12 }}>Agent Marketplace</div>
+          <div className="dash-mini-grid">
+            {templates.slice(0, 6).map(t => (
+              <div key={t.name} className="dash-mini-card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+                  <span style={{ fontSize: 13 }}>{t.emoji}</span>
+                  <span style={{ fontSize: 9.5, fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
                 </div>
-              </Link>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 8.5, color: 'var(--yellow)' }}>★ {t.rating}</span>
+                  <span style={{ fontSize: 8.5, color: 'var(--ink3)', fontFamily: 'var(--mono)' }}>{t.price}</span>
+                </div>
+              </div>
             ))}
           </div>
-          <div style={{ padding: '12px 18px', borderTop: '1px solid var(--line)' }}>
-            <Link href="/create" style={{ textDecoration: 'none' }}>
-              <Btn variant="ghost" size="sm" style={{ width: '100%', justifyContent: 'center', color: 'var(--iris-2)', borderColor: 'rgba(124,109,248,0.2)' }}>
-                + Deploy new agent passport
-              </Btn>
-            </Link>
-          </div>
-        </Card>
-
-        {/* Right column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {/* Live passport card */}
-          <PassportGlyphCard agent={hero} />
-
-          {/* Recent txns */}
-          <Card>
-            <CardHeader left={<><span style={{ fontSize: 13, fontWeight: 600 }}>Live Feed</span><span style={{ fontSize: 11, color: 'var(--ink-2)' }}>x402 payments</span></>} />
-            <div>
-              {recent.map((tx, i) => (
-                <div key={tx.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px',
-                  borderBottom: i < recent.length - 1 ? '1px solid var(--line)' : 'none',
-                }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: 7, flexShrink: 0,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11,
-                    background: tx.status === 'blocked' ? 'var(--rose-dim)' : tx.type === 'out' ? 'rgba(255,255,255,0.05)' : 'var(--emerald-dim)',
-                    color: tx.status === 'blocked' ? 'var(--rose)' : tx.type === 'out' ? 'var(--ink-2)' : 'var(--emerald)',
-                  }}>
-                    {tx.status === 'blocked' ? '⊘' : tx.type === 'out' ? '↑' : '↓'}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.name}</div>
-                    <div style={{ fontSize: 10, color: 'var(--ink-3)', fontFamily: 'var(--font-mono)', marginTop: 1 }}>{tx.agentName}</div>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: tx.status === 'blocked' ? 'var(--ink-3)' : tx.type === 'out' ? 'var(--rose)' : 'var(--emerald)' }}>
-                      {tx.status === 'blocked' ? '—' : `${tx.type === 'out' ? '-' : '+'}$${tx.amount.toFixed(2)}`}
-                    </div>
-                    <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 1 }}>{tx.timestamp}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)' }}>
-              <Link href="/transactions" style={{ textDecoration: 'none' }}>
-                <Btn variant="ghost" size="sm" style={{ width: '100%', justifyContent: 'center', fontSize: 11 }}>View all transactions →</Btn>
-              </Link>
-            </div>
-          </Card>
         </div>
       </div>
     </div>
   )
 }
 
-export default function OverviewPage() {
-  return <StoreProvider><Overview /></StoreProvider>
+function StatsBar() {
+  const { ref, visible } = useReveal<HTMLDivElement>()
+  const stats = [
+    { value: '12', label: 'Agent templates' },
+    { value: '5', label: 'Live task types' },
+    { value: 'Base', label: 'Mainnet chain' },
+    { value: '6', label: 'AI providers routed' },
+  ]
+  return (
+    <div ref={ref} className={`landing-stats-bar reveal ${visible ? 'in-view' : ''}`}>
+      <div className="landing-stats-grid">
+        {stats.map(s => (
+          <div key={s.label}>
+            <div className="landing-stat-value">{s.value}</div>
+            <div className="landing-stat-label">{s.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function FeaturesSection() {
+  const { ref, visible } = useReveal<HTMLDivElement>()
+  return (
+    <div ref={ref} className={`landing-section reveal ${visible ? 'in-view' : ''}`}>
+      <div className="landing-section-head">
+        <h2>Built for precision, not abstraction.</h2>
+        <p>Every design decision prioritizes trust, control, and transparency over convenience that hides risk.</p>
+      </div>
+      <div className="feature-row">
+        {FEATURES.map(f => (
+          <div key={f.title} className="feature-card">
+            <div className="feature-icon">{f.icon}</div>
+            <div className="feature-title">{f.title}</div>
+            <div className="feature-desc">{f.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function StepsSection() {
+  const { ref, visible } = useReveal<HTMLDivElement>()
+  return (
+    <div ref={ref} className={`landing-section reveal ${visible ? 'in-view' : ''}`} style={{ paddingTop: 0 }}>
+      <div className="landing-section-head" style={{ textAlign: 'left', margin: '0 0 24px' }}>
+        <h2>From zero to deployed<br />in three steps.</h2>
+      </div>
+      <div className="landing-steps">
+        {STEPS.map(step => (
+          <div key={step.n} className="landing-step">
+            <div className="landing-step-num">{step.n}</div>
+            <div style={{ flex: 1 }}>
+              <div className="landing-step-title">{step.title}</div>
+              <div className="landing-step-body">{step.body}</div>
+            </div>
+            <ChevronRight size={18} color="var(--ink3)" style={{ marginTop: 4 }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function AgentStrip({ templates }: { templates: { id: string; emoji?: string; name: string; description: string; rating: number; price: string; category: string }[] }) {
+  if (templates.length === 0) return null
+  return (
+    <div className="agent-strip-wrap">
+      <div className="agent-strip-head">Featured agents</div>
+      <div className="agent-strip">
+        {templates.map(t => (
+          <Link key={t.id} href={`/marketplace/${t.id}`} className="agent-strip-card" style={{ textDecoration: 'none', display: 'block' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 20 }}>{t.emoji}</span>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)' }}>{t.name}</span>
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--ink3)', lineHeight: 1.5, marginBottom: 10, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t.description}</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 10.5, color: 'var(--yellow)' }}><Star size={9} fill="currentColor" style={{ marginRight: 3 }} />{t.rating}</span>
+              <span style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--ink2)' }}>{t.price}</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export default function LandingPage() {
+  const { marketplace } = useStore()
+  const heroRef = useRef<HTMLDivElement>(null)
+  const onMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    const rect = heroRef.current?.getBoundingClientRect()
+    if (!rect) return
+    heroRef.current!.style.setProperty('--mx', `${((e.clientX - rect.left) / rect.width) * 100}%`)
+    heroRef.current!.style.setProperty('--my', `${((e.clientY - rect.top) / rect.height) * 100}%`)
+  }
+
+  return (
+    <div>
+      <LandingNav />
+
+      <div ref={heroRef} onMouseMove={onMouseMove} className="hero">
+        <div className="hero-glow-follow" />
+        <div className="hero-gradient" />
+        <div className="hero-content">
+          <div className="hero-eyebrow">Non-custodial · Real on-chain payments</div>
+          <h1 className="hero-title">AI agents that hold real money.</h1>
+          <p className="hero-subtitle">
+            Arnold is a marketplace for autonomous AI agents with real crypto wallets. Hire
+            agents that research, trade, book travel, and pay for APIs — within limits only
+            you define.
+          </p>
+          <div className="hero-ctas">
+            <Link href="/marketplace" className="btn-primary-lg">Explore the marketplace <ArrowRight size={15} /></Link>
+            <Link href="/create" className="btn-ghost-lg">Create your own agent →</Link>
+          </div>
+          <DashPreview templates={marketplace} />
+        </div>
+      </div>
+
+      <StatsBar />
+      <FeaturesSection />
+      <StepsSection />
+      <AgentStrip templates={marketplace} />
+
+      <div className="landing-cta">
+        <h2>Your agents are<br />waiting.</h2>
+        <p>Hire an autonomous agent with its own on-chain wallet — real payments, real limits, real transparency.</p>
+        <Link href="/marketplace" className="btn-primary-lg">Enter Arnold <ArrowRight size={15} /></Link>
+      </div>
+
+      <footer className="landing-footer">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 18, height: 18, borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--red), var(--red-hover))' }}>
+            <Cpu size={9} color="#fff" />
+          </div>
+          <span style={{ color: 'var(--ink2)', fontWeight: 500 }}>Arnold</span>
+          <span style={{ color: 'var(--line2)' }}>·</span>
+          <span>v0.1.0 early access</span>
+        </div>
+        <div style={{ display: 'flex', gap: 20 }}>
+          {['Docs', 'Status', 'Privacy', 'Terms'].map(l => <span key={l}>{l}</span>)}
+        </div>
+      </footer>
+    </div>
+  )
 }

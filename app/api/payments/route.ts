@@ -1,27 +1,18 @@
 import { NextResponse } from 'next/server'
 
+const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000'
+
 export async function POST(req: Request) {
-  const { agentId, recipient, amount, description, chain } = await req.json()
-
-  if (!agentId || !amount) {
-    return NextResponse.json({ error: 'agentId and amount required' }, { status: 400 })
+  try {
+    const body = await req.json()
+    const res = await fetch(`${PYTHON_API}/payments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const data = await res.json()
+    return NextResponse.json(data, { status: res.status })
+  } catch {
+    return NextResponse.json({ error: 'Backend offline' }, { status: 503 })
   }
-
-  // TODO: wire to real x402 payment logic
-  // const result = await x402Pay({ agentId, recipient, amount, chain })
-
-  const tx = {
-    id: `tx_${Date.now()}`,
-    name: description || 'API Payment',
-    agentId,
-    type: 'out',
-    amount,
-    chain: chain || 'Base',
-    address: recipient || '0x0000…0000',
-    timestamp: 'just now',
-    status: 'confirmed',
-    hash: '0x' + Math.random().toString(16).slice(2, 10),
-  }
-
-  return NextResponse.json({ ok: true, transaction: tx }, { status: 201 })
 }

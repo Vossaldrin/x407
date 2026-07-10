@@ -2,20 +2,10 @@ import { NextResponse } from 'next/server'
 
 const PYTHON_API = process.env.PYTHON_API_URL || 'http://localhost:8000'
 
-export async function GET() {
-  try {
-    const res = await fetch(`${PYTHON_API}/agents`, { cache: 'no-store' })
-    const data = await res.json()
-    return NextResponse.json(data)
-  } catch {
-    return NextResponse.json({ agents: [], error: 'Backend offline' }, { status: 503 })
-  }
-}
-
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const res = await fetch(`${PYTHON_API}/agents`, {
+    const res = await fetch(`${PYTHON_API}/marketplace/hire`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
