@@ -1,5 +1,5 @@
 'use client'
-// Agent-side payment signer for the x402-inspired flow.
+// Agent-side payment signer for the x407 flow (real HTTP 402 semantics underneath).
 // The agent's private key is supplied by the user for a single call and is
 // never sent to our backend — it only ever signs/broadcasts locally here.
 

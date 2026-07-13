@@ -1,17 +1,19 @@
 'use client'
-import { useEffect, useRef, useState, MouseEvent } from 'react'
+import { useEffect, useRef, MouseEvent } from 'react'
 import Link from 'next/link'
 import { useStore } from '@/lib/store'
 import { useReveal } from '@/lib/use-reveal'
-import { Cpu, Lock, Zap, BarChart3, Layers, ArrowRight, ChevronRight, Star, Wallet } from 'lucide-react'
+import { useCountUp } from '@/lib/use-count-up'
+import { X407Mark } from '@/components/brand/X407Mark'
+import { Lock, Zap, BarChart3, ArrowRight, ChevronRight, Star, Wallet, ShieldCheck, Globe } from 'lucide-react'
 
 const FEATURES = [
-  { icon: <Cpu size={17} />, title: 'Agents with real wallets', desc: 'Every agent is provisioned with an isolated, cryptographically-bound wallet on deployment. It can spend, receive, and transact — autonomously.' },
-  { icon: <Lock size={17} />, title: 'You set the rules', desc: 'Define daily spend limits, per-transaction caps, allowed action types, and expiry dates. Agents operate strictly within your signed policy.' },
-  { icon: <Wallet size={17} />, title: 'Real x402 payments', desc: 'Agents pay for APIs and compute with real on-chain USDC, verified against Base mainnet before anything unlocks.' },
+  { icon: <Wallet size={17} />, title: 'Zero credit cards', desc: 'Every agent spins up its own crypto wallet on deployment — it funds its own API dependencies directly, no human card on file.' },
+  { icon: <Lock size={17} />, title: 'You set the rules', desc: 'Daily spend limits, per-transaction caps, allowed action types, and expiry dates. Agents operate strictly within your signed policy.' },
+  { icon: <Zap size={17} />, title: 'Pay-per-action micro-payments', desc: 'Agents pay per API call, per inference job, or per swap — quoted and settled in seconds over real on-chain USDC, verified on Base.' },
   { icon: <BarChart3 size={17} />, title: 'Full audit trail', desc: 'Every transaction — confirmed, pending, or blocked — is logged with a real transaction hash you can verify yourself on Basescan.' },
-  { icon: <Zap size={17} />, title: 'Configure before you deploy', desc: 'Set spend limits and allowed actions right in the hire flow — no code required, no infrastructure to manage.' },
-  { icon: <Layers size={17} />, title: 'Twelve ready-made agents', desc: 'Research, DeFi trading, travel, expense optimization, dev tooling, and more — or build your own from scratch.' },
+  { icon: <ShieldCheck size={17} />, title: <>Granular escrow<span className="feature-badge">Roadmap</span></>, desc: 'Programmable conditional payouts for multi-step agent tasks. Direct quote-and-pay is live today; escrow contracts are next.' },
+  { icon: <Globe size={17} />, title: <>Permissionless listings<span className="feature-badge">Roadmap</span></>, desc: '12 ready-made agents ship today across research, DeFi, travel, and dev tooling. An open model for third-party agent listings is planned.' },
 ]
 
 const STEPS = [
@@ -21,30 +23,13 @@ const STEPS = [
 ]
 
 function LandingNav() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
-  useEffect(() => {
-    const current = document.documentElement.getAttribute('data-theme')
-    if (current === 'light' || current === 'dark') setTheme(current)
-  }, [])
-  const toggle = () => {
-    const next = theme === 'dark' ? 'light' : 'dark'
-    setTheme(next)
-    document.documentElement.setAttribute('data-theme', next)
-  }
   return (
     <nav className="landing-nav">
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-        <div style={{ width: 24, height: 24, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--red), var(--red-hover))' }}>
-          <Cpu size={12} color="#fff" />
-        </div>
-        <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.3px' }}>Arnold</span>
+        <X407Mark size={24} />
+        <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.3px' }}>x407</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button className="theme-btn" onClick={toggle} title="Toggle theme" aria-label="Toggle theme">
-          {theme === 'dark' ? '☀' : '☾'}
-        </button>
-        <Link href="/marketplace" className="btn-primary">Open app</Link>
-      </div>
+      <Link href="/marketplace" className="btn-primary">Open app</Link>
     </nav>
   )
 }
@@ -55,7 +40,7 @@ function DashPreview({ templates }: { templates: { emoji?: string; name: string;
     <div className="dash-preview">
       <div className="dash-preview-bar">
         <div className="dash-preview-dots"><span /><span /><span /></div>
-        <div className="dash-preview-url"><span>arnold.app/marketplace</span></div>
+        <div className="dash-preview-url"><span>x407.dev/marketplace</span></div>
       </div>
       <div className="dash-preview-body">
         <div className="dash-mini-sidebar">
@@ -87,6 +72,40 @@ function DashPreview({ templates }: { templates: { emoji?: string; name: string;
   )
 }
 
+function ProtocolSnippet() {
+  const { ref, visible } = useReveal<HTMLDivElement>()
+  return (
+    <div ref={ref} className={`protocol-block reveal ${visible ? 'in-view' : ''}`}>
+      <div className="protocol-block-bar">
+        <span className="protocol-block-dot" /> the x407 handshake — real HTTP 402 underneath
+      </div>
+      <pre>{`$ `}<span className="tok-cmd">curl https://api.x407.dev/demo/compute-api</span>{`
+
+`}<span className="tok-status">HTTP/1.1 402 Payment Required</span>{`
+{
+  `}<span className="tok-key">"x402Version"</span>{`: 1,
+  `}<span className="tok-key">"accepts"</span>{`: [{
+    `}<span className="tok-key">"amount"</span>{`: `}<span className="tok-str">"0.05"</span>{`,
+    `}<span className="tok-key">"network"</span>{`: `}<span className="tok-str">"base"</span>{`,
+    `}<span className="tok-key">"payTo"</span>{`: `}<span className="tok-str">"0x1a2b...e60"</span>{`
+  }]
+}
+
+$ `}<span className="tok-cmd">curl https://api.x407.dev/demo/compute-api \</span>{`
+    -H "X-PAYMENT-TX: 0x9f3c...confirmed"
+
+`}<span className="tok-status">HTTP/1.1 200 OK</span>{`
+{ `}<span className="tok-key">"unlocked"</span>{`: `}<span className="tok-str">true</span>{` }
+`}<span className="term-cursor" /></pre>
+    </div>
+  )
+}
+
+function StatValue({ value, start }: { value: string; start: boolean }) {
+  const animated = useCountUp(value, start)
+  return <div className="landing-stat-value">{animated}</div>
+}
+
 function StatsBar() {
   const { ref, visible } = useReveal<HTMLDivElement>()
   const stats = [
@@ -100,7 +119,7 @@ function StatsBar() {
       <div className="landing-stats-grid">
         {stats.map(s => (
           <div key={s.label}>
-            <div className="landing-stat-value">{s.value}</div>
+            <StatValue value={s.value} start={visible} />
             <div className="landing-stat-label">{s.label}</div>
           </div>
         ))}
@@ -114,12 +133,12 @@ function FeaturesSection() {
   return (
     <div ref={ref} className={`landing-section reveal ${visible ? 'in-view' : ''}`}>
       <div className="landing-section-head">
-        <h2>Built for precision, not abstraction.</h2>
-        <p>Every design decision prioritizes trust, control, and transparency over convenience that hides risk.</p>
+        <h2>Beats a static API key.</h2>
+        <p>Traditional platforms hide agents behind human credit cards. x407 gives them on-chain identity and native wallets instead.</p>
       </div>
-      <div className="feature-row">
-        {FEATURES.map(f => (
-          <div key={f.title} className="feature-card">
+      <div className={`feature-row ${visible ? 'stagger' : ''}`}>
+        {FEATURES.map((f, i) => (
+          <div key={i} className="feature-card">
             <div className="feature-icon">{f.icon}</div>
             <div className="feature-title">{f.title}</div>
             <div className="feature-desc">{f.desc}</div>
@@ -188,18 +207,18 @@ export default function LandingPage() {
   }
 
   return (
-    <div>
+    <div className="landing-root" data-theme="dark">
       <LandingNav />
 
       <div ref={heroRef} onMouseMove={onMouseMove} className="hero">
         <div className="hero-glow-follow" />
         <div className="hero-gradient" />
         <div className="hero-content">
-          <div className="hero-eyebrow">Non-custodial · Real on-chain payments</div>
+          <div className="hero-eyebrow">402 → 407 · non-custodial · real on-chain payments</div>
           <h1 className="hero-title">AI agents that hold real money.</h1>
           <p className="hero-subtitle">
-            Arnold is a marketplace for autonomous AI agents with real crypto wallets. Hire
-            agents that research, trade, book travel, and pay for APIs — within limits only
+            x407 is the decentralized hiring floor for autonomous AI agents. Hire agents that
+            research, trade, book travel, and pay for APIs peer-to-peer — within limits only
             you define.
           </p>
           <div className="hero-ctas">
@@ -207,6 +226,7 @@ export default function LandingPage() {
             <Link href="/create" className="btn-ghost-lg">Create your own agent →</Link>
           </div>
           <DashPreview templates={marketplace} />
+          <ProtocolSnippet />
         </div>
       </div>
 
@@ -218,15 +238,13 @@ export default function LandingPage() {
       <div className="landing-cta">
         <h2>Your agents are<br />waiting.</h2>
         <p>Hire an autonomous agent with its own on-chain wallet — real payments, real limits, real transparency.</p>
-        <Link href="/marketplace" className="btn-primary-lg">Enter Arnold <ArrowRight size={15} /></Link>
+        <Link href="/marketplace" className="btn-primary-lg">Enter x407 <ArrowRight size={15} /></Link>
       </div>
 
       <footer className="landing-footer">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 18, height: 18, borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--red), var(--red-hover))' }}>
-            <Cpu size={9} color="#fff" />
-          </div>
-          <span style={{ color: 'var(--ink2)', fontWeight: 500 }}>Arnold</span>
+          <X407Mark size={18} />
+          <span style={{ color: 'var(--ink2)', fontWeight: 500 }}>x407</span>
           <span style={{ color: 'var(--line2)' }}>·</span>
           <span>v0.1.0 early access</span>
         </div>

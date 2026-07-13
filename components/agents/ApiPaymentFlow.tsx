@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Agent } from '@/lib/store'
 import { PaymentConfirmModal } from '@/components/ui/PaymentConfirmModal'
 
-/** Generic "pay for API/compute access" flow — real on-chain USDC payment via x402. */
+/** Generic "pay for API/compute access" flow — real on-chain USDC payment via x407 (built on x402/HTTP 402 semantics). */
 export function ApiPaymentFlow({ agent, initialResourceUrl }: { agent: Agent; initialResourceUrl?: string }) {
   const [payResource, setPayResource] = useState<string | null>(initialResourceUrl !== undefined ? (initialResourceUrl || '') : null)
 

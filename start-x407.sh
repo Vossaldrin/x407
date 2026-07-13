@@ -1,12 +1,12 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────
-# Arnold — one-command startup for backend + frontend
-# Usage: ./start-arnold.sh
+# x407 — one-command startup for backend + frontend
+# Usage: ./start-x407.sh
 # ─────────────────────────────────────────────────────────
 
 PROJECT_DIR="$HOME/Downloads/arno"
 
-echo "🦅 Starting Arnold..."
+echo "🦅 Starting x407..."
 echo ""
 
 # Start backend in background

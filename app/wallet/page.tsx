@@ -142,7 +142,7 @@ export default function WalletPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+      <div className="wallet-two-col">
         {/* Token balances */}
         <div className="card">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', borderBottom: '0.5px solid var(--line)' }}>
@@ -202,7 +202,7 @@ export default function WalletPage() {
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Agent balances</span>
           <span className="mono" style={{ fontSize: 11, color: 'var(--ink2)' }}>Total: ${agentTotal.toFixed(2)}</span>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(agents.length, 4) || 1}, 1fr)` }}>
+        <div className="wallet-agent-row" style={{ gridTemplateColumns: `repeat(${Math.min(agents.length, 4) || 1}, 1fr)` }}>
           {agents.map((a, i) => {
             const accent = { emerald: 'var(--green)', amber: 'var(--yellow)', iris: '#7C6DF8', rose: 'var(--rose)' }[a.color] ?? 'var(--green)'
             return (

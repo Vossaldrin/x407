@@ -5,18 +5,8 @@ import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { StoreProvider } from '@/lib/store'
 import { connectWallet } from '@/lib/wallet-connect'
+import { X407Mark } from '@/components/brand/X407Mark'
 import { Store, Bot, Plus, Wallet as WalletIcon, ArrowLeftRight, Bell } from 'lucide-react'
-
-function EagleLogo() {
-  return (
-    <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-      <path d="M13 2L19 6V9L23 7L21 12L17 11V15L23 21H17L13 17L9 21H3L9 15V11L5 12L3 7L7 9V6L13 2Z" fill="#4CAF50" opacity="0.95"/>
-      <path d="M13 2L13 17" stroke="#FFD600" strokeWidth="0.8" opacity="0.7"/>
-      <path d="M13 2L7 9M13 2L19 9" stroke="#FFD600" strokeWidth="0.7" opacity="0.5"/>
-      <circle cx="13" cy="2" r="1.5" fill="#FFD600"/>
-    </svg>
-  )
-}
 
 const NAV_ITEMS = [
   { href: '/marketplace',  label: 'Marketplace',  icon: Store },
@@ -33,7 +23,7 @@ function isActive(path: string, href: string): boolean {
 
 function pageLabelFor(path: string): string {
   const match = NAV_ITEMS.find(item => isActive(path, item.href))
-  return match?.label || 'Arnold'
+  return match?.label || 'x407'
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -54,12 +44,12 @@ function Shell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="arnold-shell">
+    <div className="x407-shell">
       <aside className="side-nav">
         <Link href="/" className="side-logo">
-          <EagleLogo />
+          <X407Mark size={26} />
           <div>
-            <div className="side-logo-name">Arnold</div>
+            <div className="side-logo-name">x407</div>
           </div>
         </Link>
 
@@ -92,19 +82,32 @@ function Shell({ children }: { children: React.ReactNode }) {
 
       <div className="main-col">
         <div className="top-breadcrumb">
-          <div className="breadcrumb-text">Arnold <span>›</span> <span className="breadcrumb-current">{pageLabelFor(path)}</span></div>
+          <div className="breadcrumb-text">x407 <span>›</span> <span className="breadcrumb-current">{pageLabelFor(path)}</span></div>
           <div className="top-right">
             <button className="bell-btn" title="Notifications" aria-label="Notifications">
               <Bell size={14} />
               <span className="bell-dot" />
             </button>
-            <div className="status-chip"><span className="status-pulse" /> All systems operational</div>
+            <div className="status-chip"><span className="status-pulse" /> <span className="status-chip-text">All systems operational</span></div>
           </div>
         </div>
         <main className="main-content">
           {children}
         </main>
       </div>
+
+      <nav className="bottom-nav">
+        {NAV_ITEMS.map(item => {
+          const Icon = item.icon
+          return (
+            <Link key={item.href} href={item.href}
+              className={`bottom-nav-link ${isActive(path, item.href) ? 'active' : ''}`}>
+              <Icon size={18} />
+              {item.label === 'Create Agent' ? 'Create' : item.label === 'Transactions' ? 'Tx' : item.label}
+            </Link>
+          )
+        })}
+      </nav>
     </div>
   )
 }
@@ -113,10 +116,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
-        <title>Arnold — Agent Marketplace</title>
+        <title>x407 — Autonomous Agent Marketplace</title>
         <meta name="description" content="Hire and deploy autonomous AI agents" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦅</text></svg>" />
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%2339FF88'/><text x='50' y='70' font-size='58' font-family='monospace' font-weight='700' fill='%2304140A' text-anchor='middle'>&gt;</text></svg>" />
       </head>
       <body>
         <StoreProvider>

@@ -79,7 +79,7 @@ export default function CreatePage() {
         <p style={{ fontSize: 14, color: 'var(--ink3)' }}>Configure and deploy a new autonomous agent.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20, alignItems: 'start' }}>
+      <div className="create-grid">
         {/* Form */}
         <div className="card card-pad" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
@@ -146,11 +146,11 @@ export default function CreatePage() {
         </div>
 
         {/* Live preview */}
-        <div style={{ position: 'sticky', top: 72 }}>
+        <div className="create-preview-col">
           <div className="field-label" style={{ marginBottom: 10 }}>Live preview</div>
           <div className="passport-card">
             <div className="passport-stripe" style={{ background: `linear-gradient(90deg, ${accent}, transparent)` }} />
-            <div className="passport-label">Arnold Passport</div>
+            <div className="passport-label">x407 Passport</div>
             <div className="passport-name" style={{ color: form.name ? 'var(--ink)' : 'var(--ink3)' }}>
               {form.name || 'Agent name…'}
             </div>

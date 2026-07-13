@@ -1,6 +1,6 @@
 'use client'
 // Real Uniswap V3 swap execution, ETH<->USDC on Base — client-side signing only.
-// Same non-custodial pattern as lib/x402-agent-pay.ts: the agent's private key
+// Same non-custodial pattern as lib/x407-agent-pay.ts: the agent's private key
 // signs both the approve (if needed) and swap transactions locally.
 
 import { ethers } from 'ethers'

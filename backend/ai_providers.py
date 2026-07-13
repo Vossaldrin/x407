@@ -95,12 +95,17 @@ def grok_reason(prompt: str) -> str:
 
 
 def deepseek_reason(prompt: str) -> str:
-    """DeepSeek recommends which data sources to consult for a research topic."""
-    return _openai_compatible_reason(
-        prompt,
-        "You are a concise research assistant recommending which data sources best fit a topic. Respond in 1-2 sentences, plain text, no markdown.",
-        "DEEPSEEK_API_KEY", "https://api.deepseek.com", "deepseek-v4-flash",
-    )
+    """DeepSeek recommends which data sources to consult for a research topic.
+
+    Prefers DEEPSEEK_API_KEY (DeepSeek's own paid API). If that's unset but
+    GROQ_API_KEY is present, falls back to Groq's free, OpenAI-compatible
+    endpoint hosting DeepSeek-R1 — same model family, no cost. Get a free
+    Groq key at https://console.groq.com.
+    """
+    system = "You are a concise research assistant recommending which data sources best fit a topic. Respond in 1-2 sentences, plain text, no markdown."
+    if os.getenv("DEEPSEEK_API_KEY"):
+        return _openai_compatible_reason(prompt, system, "DEEPSEEK_API_KEY", "https://api.deepseek.com", "deepseek-v4-flash")
+    return _openai_compatible_reason(prompt, system, "GROQ_API_KEY", "https://api.groq.com/openai/v1", "deepseek-r1-distill-llama-70b")
 
 
 def kimi_reason(prompt: str) -> str:

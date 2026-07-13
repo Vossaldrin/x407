@@ -1,7 +1,7 @@
 """
 Real Uniswap V3 swap execution on Base mainnet, scoped to ETH <-> USDC (v1).
 ================================================================================
-Same non-custodial pattern as x402.py: the agent's own wallet signs and
+Same non-custodial pattern as x407.py: the agent's own wallet signs and
 broadcasts both the ERC-20 approve (if needed) and the swap transaction
 client-side. This module only quotes and verifies.
 
@@ -12,18 +12,18 @@ verification trail. Do not change these without re-verifying.
 import os
 from web3 import Web3
 from fastapi import HTTPException
-import x402
+import x407
 
 SWAP_ROUTER02 = Web3.to_checksum_address("0x2626664c2603336E57B271c5C0b26F421741e481")
 QUOTER_V2 = Web3.to_checksum_address("0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a")
 WETH9 = Web3.to_checksum_address("0x4200000000000000000000000000000000000006")
-USDC = Web3.to_checksum_address(x402.USDC_BASE)
+USDC = Web3.to_checksum_address(x407.USDC_BASE)
 
 TOKENS = {"ETH": WETH9, "USDC": USDC}
 DECIMALS = {"ETH": 18, "USDC": 6}
 FEE_TIERS = [500, 3000]  # 0.05% and 0.3% pools — the deepest on Base for this pair
 
-_w3 = Web3(Web3.HTTPProvider(x402.BASE_RPC_URL))
+_w3 = Web3(Web3.HTTPProvider(x407.BASE_RPC_URL))
 
 QUOTER_ABI = [{
     "inputs": [{
@@ -96,7 +96,7 @@ def get_best_quote(from_token: str, to_token: str, amount_in: float) -> dict:
 def verify_swap_onchain(tx_hash: str, expected_from: str, from_token: str, to_token: str, min_amount_in: float) -> dict:
     """Confirms a real swap tx: sent to the router by the agent, moving at least
     min_amount_in of from_token out of the agent's wallet. Mirrors
-    x402.verify_onchain_payment's strictness — never trust the client's own claim."""
+    x407.verify_onchain_payment's strictness — never trust the client's own claim."""
     try:
         receipt = _w3.eth.get_transaction_receipt(tx_hash)
     except Exception:

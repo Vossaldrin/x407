@@ -1,5 +1,5 @@
 """
-Arnold — Python API Backend
+x407 — Python API Backend
 ============================
 Real Ethereum passport + wallet logic for autonomous AI agents.
 
@@ -23,12 +23,12 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from eth_account import Account
 import time, secrets, httpx
-import x402
+import x407
 import llm
 import dex
 import ai_providers
 
-app = FastAPI(title="Arnold API", version="0.3.0", docs_url="/docs")
+app = FastAPI(title="x407 API", version="0.3.0", docs_url="/docs")
 
 app.add_middleware(
     CORSMiddleware,
@@ -351,7 +351,7 @@ def safe(agent: dict) -> dict:
 # ── Health ────────────────────────────────────────────────────────────────────
 @app.get("/")
 def root():
-    return {"status": "ok", "service": "Arnold API", "version": "0.3.0",
+    return {"status": "ok", "service": "x407 API", "version": "0.3.0",
             "agents": len(agents_db), "marketplace": len(MARKETPLACE)}
 
 # ── Marketplace ───────────────────────────────────────────────────────────────
@@ -441,7 +441,7 @@ def make_payment(body: PaymentRequest):
     if not agent:
         raise HTTPException(404, "Agent not found")
 
-    x402.check_limits(agent, body.amount, blocked_cb=lambda reason: _blocked(agent, body, reason))
+    x407.check_limits(agent, body.amount, blocked_cb=lambda reason: _blocked(agent, body, reason))
 
     agent["spentToday"] += body.amount
     agent["txCount"] += 1
@@ -482,7 +482,7 @@ def _record(agent, body, status):
     transactions_db.insert(0, tx)
     return tx
 
-# ── Payments (real, x402-inspired) ─────────────────────────────────────────────
+# ── Payments (real, x407-inspired) ─────────────────────────────────────────────
 # In-memory record of what each agent was last quoted, keyed by agentId, so
 # /payments/execute can re-check the client's tx against the exact terms it
 # was shown — never trust amount/recipient handed back by the client alone.
@@ -490,28 +490,28 @@ _last_quote: dict = {}
 
 @app.get("/demo/sources")
 def demo_sources():
-    """Catalog of demo x402-payable data sources, for the Research Agent's source picker."""
-    return {"sources": [{"id": sid, **info} for sid, info in x402.DEMO_SOURCES.items()]}
+    """Catalog of demo x407-payable data sources, for the Research Agent's source picker."""
+    return {"sources": [{"id": sid, **info} for sid, info in x407.DEMO_SOURCES.items()]}
 
 async def _demo_resource_handler(source_id: str, request: Request):
-    """Shared x402-style merchant behavior: 402 with a quote when unpaid, 200 with the
+    """Shared x407-style merchant behavior: 402 with a quote when unpaid, 200 with the
     unlocked payload once a matching on-chain payment is verified. Standing in for a real
     compute/API/data provider so the full quote -> pay -> unlock loop is testable without
     a third party."""
-    if source_id not in x402.DEMO_SOURCES:
+    if source_id not in x407.DEMO_SOURCES:
         raise HTTPException(404, f"Unknown demo source '{source_id}'")
-    if not x402.DEMO_MERCHANT_ADDRESS:
+    if not x407.DEMO_MERCHANT_ADDRESS:
         raise HTTPException(500, "DEMO_MERCHANT_ADDRESS is not configured on the backend")
 
     tx_hash = request.query_params.get("txHash") or request.headers.get("X-PAYMENT-TX")
     payer = request.query_params.get("payer") or request.headers.get("X-PAYMENT-FROM")
 
     if not tx_hash:
-        return JSONResponse(status_code=402, content=x402.demo_quote_response(source_id))
+        return JSONResponse(status_code=402, content=x407.demo_quote_response(source_id))
 
-    price = x402.DEMO_SOURCES[source_id]["price"]
-    result = x402.verify_onchain_payment(tx_hash, payer or "", x402.DEMO_MERCHANT_ADDRESS, price)
-    return JSONResponse(status_code=200, content=x402.demo_unlock_response(source_id, result["amount"], result["txHash"]))
+    price = x407.DEMO_SOURCES[source_id]["price"]
+    result = x407.verify_onchain_payment(tx_hash, payer or "", x407.DEMO_MERCHANT_ADDRESS, price)
+    return JSONResponse(status_code=200, content=x407.demo_unlock_response(source_id, result["amount"], result["txHash"]))
 
 @app.api_route("/demo/compute-api", methods=["GET", "POST"])
 async def demo_compute_api(request: Request):
@@ -527,7 +527,7 @@ async def quote_payment(body: QuoteRequest):
     if not agent:
         raise HTTPException(404, "Agent not found")
 
-    resource_url = body.resourceUrl or f"{x402.SELF_API_URL}/demo/compute-api"
+    resource_url = body.resourceUrl or f"{x407.SELF_API_URL}/demo/compute-api"
     async with httpx.AsyncClient() as client:
         try:
             res = await client.get(resource_url, timeout=10)
@@ -543,7 +543,7 @@ async def quote_payment(body: QuoteRequest):
         raise HTTPException(502, "Malformed 402 response: no 'accepts' entry")
 
     amount = float(accept["amount"])
-    x402.check_limits(agent, amount)
+    x407.check_limits(agent, amount)
 
     _last_quote[body.agentId] = {"resourceUrl": resource_url, "accept": accept}
     return {"agent": safe(agent), "quote": accept, "resourceUrl": resource_url}
@@ -564,7 +564,7 @@ async def execute_payment(body: ExecuteRequest):
     def blocked(reason):
         transactions_db.insert(0, {
             "id": f"tx_{int(time.time()*1000)}",
-            "name": accept.get("description", "x402 payment"),
+            "name": accept.get("description", "x407 payment"),
             "agentId": body.agentId, "agentName": agent["name"],
             "type": "out", "amount": amount, "chain": "Base",
             "address": agent["shortAddr"],
@@ -572,10 +572,10 @@ async def execute_payment(body: ExecuteRequest):
             "status": "blocked", "reason": reason, "hash": body.txHash, "real": True,
         })
 
-    x402.check_limits(agent, amount, blocked_cb=blocked)
+    x407.check_limits(agent, amount, blocked_cb=blocked)
 
     try:
-        result = x402.verify_onchain_payment(body.txHash, agent["fullAddr"], accept["payTo"], amount)
+        result = x407.verify_onchain_payment(body.txHash, agent["fullAddr"], accept["payTo"], amount)
     except HTTPException as e:
         blocked(str(e.detail))
         raise
@@ -590,7 +590,7 @@ async def execute_payment(body: ExecuteRequest):
     agent["txCount"] += 1
     tx = {
         "id": f"tx_{int(time.time()*1000)}",
-        "name": accept.get("description", "x402 payment"),
+        "name": accept.get("description", "x407 payment"),
         "agentId": body.agentId, "agentName": agent["name"],
         "type": "out", "amount": result["amount"], "chain": "Base",
         "address": agent["shortAddr"],
@@ -612,7 +612,7 @@ def defi_quote(agentId: str, fromToken: str, toToken: str, amountIn: float):
 
     quote = dex.get_best_quote(fromToken, toToken, amountIn)
     notional = amountIn if fromToken == "USDC" else quote["amountOut"]
-    x402.check_limits(agent, notional)
+    x407.check_limits(agent, notional)
 
     _last_defi_quote[agentId] = {"fromToken": fromToken, "toToken": toToken, "amountIn": amountIn, "notional": notional}
     return {"agent": safe(agent), "quote": quote}
@@ -638,7 +638,7 @@ def defi_execute(body: DefiExecuteRequest):
             "status": "blocked", "reason": reason, "hash": body.txHash, "real": True,
         })
 
-    x402.check_limits(agent, quoted["notional"], blocked_cb=blocked)
+    x407.check_limits(agent, quoted["notional"], blocked_cb=blocked)
 
     try:
         result = dex.verify_swap_onchain(body.txHash, agent["fullAddr"], body.fromToken, body.toToken, quoted["amountIn"])
@@ -721,7 +721,7 @@ def payment_reason(body: PaymentReasonRequest):
 @app.post("/agents/research/recommend-sources")
 def recommend_sources(body: ResearchRecommendRequest):
     """Advisory-only DeepSeek suggestion on which demo sources fit a topic. Fails soft."""
-    catalog = "; ".join(f"{sid} ({info['name']}: {info['description']})" for sid, info in x402.DEMO_SOURCES.items())
+    catalog = "; ".join(f"{sid} ({info['name']}: {info['description']})" for sid, info in x407.DEMO_SOURCES.items())
     prompt = f"Research topic: '{body.topic}'. Available sources: {catalog}. Which sources best fit, and why?"
     try:
         insight = ai_providers.deepseek_reason(prompt)
@@ -763,7 +763,7 @@ TOOL_BY_FLOW: Dict[str, Dict[str, Any]] = {
                 "topic": {"type": "string", "description": "The research topic"},
                 "sourceIds": {
                     "type": "array",
-                    "items": {"type": "string", "enum": list(x402.DEMO_SOURCES.keys())},
+                    "items": {"type": "string", "enum": list(x407.DEMO_SOURCES.keys())},
                     "description": "Which paid data sources to consult",
                 },
             },
@@ -884,6 +884,6 @@ def wallet_summary():
 
 if __name__ == "__main__":
     import uvicorn
-    print("\n🦅 Arnold API starting on http://localhost:8000")
+    print("\n🦅 x407 API starting on http://localhost:8000")
     print("📖 Docs at http://localhost:8000/docs\n")
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)

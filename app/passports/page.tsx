@@ -48,7 +48,7 @@ function AgentListCard({ agent }: { agent: Agent }) {
       </div>
 
       {!isExpired && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, marginBottom: 16 }}>
+        <div className="passport-stats-grid">
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 6 }}>
               <span style={{ color: 'var(--ink3)' }}>Daily spend</span>

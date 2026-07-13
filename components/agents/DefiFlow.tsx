@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Agent } from '@/lib/store'
 import { executeSwap } from '@/lib/defi-swap'
-import { agentAddressFromKey } from '@/lib/x402-agent-pay'
+import { agentAddressFromKey } from '@/lib/x407-agent-pay'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 

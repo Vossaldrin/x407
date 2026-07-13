@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Agent, useStore } from '@/lib/store'
-import { payWithAgentWallet, agentAddressFromKey } from '@/lib/x402-agent-pay'
+import { payWithAgentWallet, agentAddressFromKey } from '@/lib/x407-agent-pay'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 

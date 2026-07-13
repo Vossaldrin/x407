@@ -1,5 +1,7 @@
 """
-x402-inspired payment settlement for Arnold agents.
+x407 payment settlement for agent-to-agent commerce.
+Built on real HTTP 402 (Payment Required) semantics — x407 is the product
+name for this rail, not a different wire protocol.
 =====================================================
 Agents never hand their private key to this backend. The browser signs and
 broadcasts a plain ERC-20 transfer directly with the agent's own key; this
@@ -34,10 +36,10 @@ _w3 = Web3(Web3.HTTPProvider(BASE_RPC_URL))
 # Demo "premium data source" catalog for the Research Agent — stand-ins for
 # real x402-payable APIs, all settled through the same real on-chain rail.
 DEMO_SOURCES = {
-    "compute-api": {"name": "Compute API",  "price": 0.05, "description": "Arnold demo compute API — 1 inference job"},
-    "market-data": {"name": "Market Data",  "price": 0.03, "description": "Arnold demo market data feed — latest quotes"},
-    "web-search":  {"name": "Web Research", "price": 0.02, "description": "Arnold demo web research snippet"},
-    "analytics":   {"name": "Analytics",    "price": 0.04, "description": "Arnold demo analytics summary"},
+    "compute-api": {"name": "Compute API",  "price": 0.05, "description": "x407 demo compute API — 1 inference job"},
+    "market-data": {"name": "Market Data",  "price": 0.03, "description": "x407 demo market data feed — latest quotes"},
+    "web-search":  {"name": "Web Research", "price": 0.02, "description": "x407 demo web research snippet"},
+    "analytics":   {"name": "Analytics",    "price": 0.04, "description": "x407 demo analytics summary"},
 }
 
 

@@ -14,7 +14,7 @@ function TxRow({ tx, last }: { tx: Transaction; last: boolean }) {
   const isBlocked = tx.status === 'blocked'
   const isIn      = tx.type === 'in'
   return (
-    <div className="tx-row" style={{ borderBottom: last ? 'none' : undefined, display: 'grid', gridTemplateColumns: '30px 1fr auto auto auto', alignItems: 'center', gap: 12 }}>
+    <div className="tx-row tx-row-grid" style={{ borderBottom: last ? 'none' : undefined }}>
       <div className={`tx-icon ${isBlocked ? 'tx-blk' : isIn ? 'tx-in' : 'tx-out'}`}>
         {isBlocked ? '⊘' : isIn ? '↓' : '↑'}
       </div>
@@ -86,7 +86,7 @@ export default function TransactionsPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '0.5px solid var(--line)' }}>
           <div>
             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>Transactions</span>
-            <span style={{ fontSize: 11, color: 'var(--ink2)', marginLeft: 8 }}>x402 autonomous payments · all agents</span>
+            <span style={{ fontSize: 11, color: 'var(--ink2)', marginLeft: 8 }}>x407 autonomous payments · all agents</span>
           </div>
           <button className="btn-ghost" style={{ fontSize: 11 }}>Export CSV</button>
         </div>
