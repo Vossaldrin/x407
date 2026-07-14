@@ -252,7 +252,7 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
 .mkt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 
 .mkt-card {
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  background: var(--card); border: 1px solid var(--line); border-radius: 26px;
   padding: 20px; cursor: pointer; transition: all 0.3s cubic-bezier(.4,0,.2,1);
   opacity: 0; animation: cardIn 0.5s cubic-bezier(.4,0,.2,1) forwards;
 }
@@ -261,8 +261,9 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
   transform: translateY(-4px);
   box-shadow: 0 16px 40px rgba(57,255,136,0.15);
 }
+.mkt-card:active { transform: scale(0.97); }
 .mkt-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
-.mkt-icon { width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center; font-size: 20px; background: var(--card2); transition: transform 0.3s; }
+.mkt-icon { width: 46px; height: 46px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 21px; background: var(--card2); transition: transform 0.3s; }
 .mkt-card:hover .mkt-icon { transform: scale(1.1) rotate(-4deg); }
 
 .price-tag { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 6px; }
@@ -566,7 +567,22 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
   .create-preview-col { position: static; }
 
   .wallet-two-col { grid-template-columns: 1fr; }
+
+  /* Bottom-sheet modals on mobile (Phantom-style), instead of centered dialogs */
+  .modal-overlay { align-items: flex-end; }
+  .modal-panel {
+    width: 100% !important; max-width: 100% !important;
+    border-radius: 24px 24px 0 0; border-bottom: none;
+    padding-top: 12px; padding-bottom: max(28px, env(safe-area-inset-bottom));
+    animation: sheetUp 0.32s cubic-bezier(.4,0,.2,1);
+  }
+  .modal-panel::before {
+    content: ''; display: block; width: 36px; height: 4px; border-radius: 2px;
+    background: var(--line2); margin: 0 auto 18px;
+  }
 }
+
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
 @media (max-width: 640px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }

@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useStore, MarketplaceTemplate } from '@/lib/store'
+import { useStore, MarketplaceTemplate, accentColor } from '@/lib/store'
 import Link from 'next/link'
 import { Search, SlidersHorizontal, Star } from 'lucide-react'
 
@@ -8,10 +8,11 @@ const CATEGORIES = ['All', 'Finance', 'Shopping', 'Research', 'Travel', 'Dev too
 
 function AgentCard({ tpl }: { tpl: MarketplaceTemplate }) {
   const isFree = tpl.price === 'Free'
+  const accent = accentColor(tpl.color)
   return (
     <Link href={`/marketplace/${tpl.id}`} className="mkt-card" style={{ textDecoration: 'none', display: 'block' }}>
       <div className="mkt-card-top">
-        <div className="mkt-icon">{tpl.emoji}</div>
+        <div className="mkt-icon" style={{ background: `linear-gradient(135deg, ${accent}40, ${accent}14)` }}>{tpl.emoji}</div>
         <span className={`price-tag ${isFree ? 'price-free' : 'price-paid'}`}>{tpl.price}</span>
       </div>
       <div className="mkt-name">{tpl.name}</div>
