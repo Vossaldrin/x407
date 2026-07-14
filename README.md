@@ -4,6 +4,8 @@
 
 Traditional AI platforms force agents to rely on static, centralized web2 API keys hidden behind a human's credit card. x407 gives agents on-chain identity and native crypto wallets instead, so they can discover, hire, and pay for what they need peer-to-peer with trustless, verifiable microtransactions.
 
+**Live**: [x407-alpha.vercel.app](https://x407-alpha.vercel.app) (frontend on Vercel, backend on Render)
+
 The name is a nod to `HTTP 407 Proxy Authentication Required` — in traditional networking, a 407 means a client has to authenticate with a proxy before its request can travel safely to its destination. That's the same shape as an autonomous agent needing to authenticate its spending before a task can execute. **The wire protocol itself is still real HTTP 402 (Payment Required)** — the same semantics the emerging [x402](https://x402.org) standard uses — so every quote/pay flow here stays interoperable with anything else that speaks 402. x407 is the product name for that rail, not a different wire format.
 
 ---
@@ -14,8 +16,8 @@ The name is a nod to `HTTP 407 Proxy Authentication Required` — in traditional
 - **You set the rules** — daily spend limits, per-transaction caps, allowed actions, and expiry, enforced server-side before anything executes.
 - **Pay-per-action micro-payments** — quoted and settled per API call, inference job, or swap over real on-chain USDC — no subscriptions.
 - **Full audit trail** — every transaction is logged with a real, Basescan-verifiable hash.
-- **Granular escrow** *(roadmap)* — programmable conditional payouts for multi-step tasks. Not built yet; today's flow is direct quote-and-pay, not escrow.
-- **Permissionless listings** *(roadmap)* — 12 curated agents ship today; an open model for third-party agents to list themselves is planned, not live.
+- **Granular escrow** — `TaskEscrow.sol`: programmable conditional payouts for multi-step tasks. Built and tested (Foundry, Base Sepolia target); not yet deployed to any network. The live app's default flow is still direct quote-and-pay, not escrow.
+- **Permissionless listings** — `AgentRegistry.sol`: stake-gated, permissionless agent self-listing. Built and tested; not yet deployed. The live marketplace still serves the curated 12-template catalogue.
 
 ---
 
@@ -32,8 +34,8 @@ Everything below executes against real infrastructure — no mocked responses, n
 | Agent chat (Claude tool-use → proposes actions for you to confirm) | ✅ Built — needs an `ANTHROPIC_API_KEY` with credit |
 | Multi-provider AI routing (Claude, GPT, Gemini, Grok, DeepSeek, Kimi) | ✅ Built — advisory calls fail soft without a key |
 | Persistent storage (agents, transactions, users) | ❌ Not built — everything is in-memory, resets on backend restart |
-| Smart-contract escrow / conditional payouts | ❌ Not built — roadmap only |
-| Production deployment (Vercel/Railway) | ❌ Not deployed yet |
+| On-chain contracts (`contracts/` — TaskEscrow, AgentRegistry, PaymentStream, SpendGuardModule) | ✅ Built, 35 passing tests — ❌ not deployed to any network yet |
+| Production deployment | ✅ Live — frontend on Vercel, backend on Render (see below) |
 
 ---
 
@@ -134,7 +136,7 @@ x407/
 | Payments  | x407 (real HTTP 402 semantics, Base mainnet USDC) |
 | DEX       | Uniswap V3 (SwapRouter02 + QuoterV2, Base)        |
 | AI        | Claude, GPT, Gemini, Grok, DeepSeek, Kimi          |
-| Deploy    | Vercel (frontend) + Railway (backend) — not yet deployed |
+| Deploy    | Vercel (frontend) + Render (backend) — live |
 
 ---
 
@@ -147,10 +149,13 @@ x407/
 - [x] Agent chat with tool-use action proposals
 - [x] Multi-provider AI routing (6 providers)
 - [x] Mobile-responsive shell (bottom tab nav)
+- [x] Production deployment (Vercel + Render)
+- [x] Phantom-inspired marketplace visual polish (gradient icon badges, bottom-sheet modals)
+- [x] On-chain contracts written + tested (TaskEscrow, AgentRegistry, PaymentStream, SpendGuardModule)
 - [ ] Persistent database (agents, transactions, user accounts)
-- [ ] Production deployment
-- [ ] Smart-contract escrow for conditional, multi-step payouts
-- [ ] Permissionless third-party agent listings
+- [ ] Deploy contracts to Base Sepolia + verify on Basescan
+- [ ] Wire contracts into the live app (backend/x407.py, lib/store.tsx)
+- [ ] Permissionless third-party agent listings live in the marketplace UI
 - [ ] Streaming per-token metering (beyond per-action pricing)
 
 ---

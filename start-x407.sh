@@ -4,7 +4,7 @@
 # Usage: ./start-x407.sh
 # ─────────────────────────────────────────────────────────
 
-PROJECT_DIR="$HOME/Downloads/arno"
+PROJECT_DIR="$HOME/Downloads/x407"
 
 echo "🦅 Starting x407..."
 echo ""
