@@ -13,3 +13,7 @@ __pycache__/
 venv/
 backend/__pycache__/
 *.tsbuildinfo
+
+# Foundry (contracts/) -- fetched via `forge install`, not committed
+/contracts/lib/
+/contracts/cache/
