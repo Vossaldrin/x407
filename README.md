@@ -157,6 +157,7 @@ x407/
 - [ ] Wire contracts into the live app (backend/x407.py, lib/store.tsx)
 - [ ] Permissionless third-party agent listings live in the marketplace UI
 - [ ] Streaming per-token metering (beyond per-action pricing)
+- [ ] Agent trust/reputation layer — in-marketplace job history, ratings, and stake as an owned signal; reading an external on-chain trust registry is being evaluated as an optional future signal, not a dependency
 
 ---
 

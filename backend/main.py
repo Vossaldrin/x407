@@ -23,6 +23,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from eth_account import Account
 import time, secrets, httpx
+import anthropic
 import x407
 import llm
 import dex
@@ -749,7 +750,7 @@ def wallet_summary_insight(body: WalletSummaryRequest):
 def synthesize_research(body: SynthesizeRequest):
     try:
         report = llm.synthesize_report(body.topic, body.snippets)
-    except RuntimeError as e:
+    except (RuntimeError, anthropic.APIError) as e:
         raise HTTPException(500, str(e))
     return {"report": report}
 
@@ -840,7 +841,7 @@ def agent_chat(body: ChatRequest):
 
     try:
         response = ai_providers.claude_chat(system, messages, tools=[tool] if tool else None)
-    except RuntimeError as e:
+    except (RuntimeError, anthropic.APIError) as e:
         raise HTTPException(500, str(e))
 
     reply_parts = []

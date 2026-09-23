@@ -173,11 +173,12 @@ function StepsSection() {
 }
 
 function AgentStrip({ templates }: { templates: { id: string; emoji?: string; name: string; description: string; rating: number; price: string; category: string }[] }) {
+  const { ref, visible } = useReveal<HTMLDivElement>()
   if (templates.length === 0) return null
   return (
-    <div className="agent-strip-wrap">
+    <div ref={ref} className={`agent-strip-wrap reveal ${visible ? 'in-view' : ''}`}>
       <div className="agent-strip-head">Featured agents</div>
-      <div className="agent-strip">
+      <div className={`agent-strip ${visible ? 'stagger' : ''}`}>
         {templates.map(t => (
           <Link key={t.id} href={`/marketplace/${t.id}`} className="agent-strip-card" style={{ textDecoration: 'none', display: 'block' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -192,6 +193,17 @@ function AgentStrip({ templates }: { templates: { id: string; emoji?: string; na
           </Link>
         ))}
       </div>
+    </div>
+  )
+}
+
+function FinalCta() {
+  const { ref, visible } = useReveal<HTMLDivElement>()
+  return (
+    <div ref={ref} className={`landing-cta reveal ${visible ? 'in-view' : ''}`}>
+      <h2>Your agents are<br />waiting.</h2>
+      <p>Hire an autonomous agent with its own on-chain wallet — real payments, real limits, real transparency.</p>
+      <Link href="/marketplace" className="btn-primary-lg">Enter x407 <ArrowRight size={15} /></Link>
     </div>
   )
 }
@@ -234,12 +246,7 @@ export default function LandingPage() {
       <FeaturesSection />
       <StepsSection />
       <AgentStrip templates={marketplace} />
-
-      <div className="landing-cta">
-        <h2>Your agents are<br />waiting.</h2>
-        <p>Hire an autonomous agent with its own on-chain wallet — real payments, real limits, real transparency.</p>
-        <Link href="/marketplace" className="btn-primary-lg">Enter x407 <ArrowRight size={15} /></Link>
-      </div>
+      <FinalCta />
 
       <footer className="landing-footer">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

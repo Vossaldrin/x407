@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { useStore, Agent, accentColor } from '@/lib/store'
 import { ApiPaymentFlow } from '@/components/agents/ApiPaymentFlow'
 import { ResearchFlow } from '@/components/agents/ResearchFlow'
@@ -9,7 +10,13 @@ import { FinanceFlow } from '@/components/agents/FinanceFlow'
 import { TravelFlow } from '@/components/agents/TravelFlow'
 import { DefiFlow } from '@/components/agents/DefiFlow'
 import { AgentChat } from '@/components/agents/AgentChat'
+import { StaticFallback } from '@/components/agents/OrbFallback'
 import { ProposedAction } from '@/lib/agent-chat'
+
+const AgentOrb = dynamic(() => import('@/components/agents/AgentOrb'), {
+  ssr: false,
+  loading: () => <StaticFallback color="var(--ink3)" />,
+})
 
 type FlowType = 'research' | 'finance' | 'travel' | 'defi' | 'api' | 'none'
 
@@ -54,6 +61,12 @@ export default function AgentDetailPage() {
       <Link href="/passports" style={{ fontSize: 12, color: 'var(--ink3)', textDecoration: 'none', display: 'inline-block', marginBottom: 16 }}>
         ← Back to passports
       </Link>
+
+      <div className="card" style={{ marginBottom: 20, display: 'flex', justifyContent: 'center', padding: '28px 0' }}>
+        <div style={{ width: 150, height: 150 }}>
+          <AgentOrb color={accent} status={agent.status} />
+        </div>
+      </div>
 
       <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ height: 3, background: `linear-gradient(90deg, ${accent}, transparent)` }} />

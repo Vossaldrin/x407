@@ -168,7 +168,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const res = await fetch(`${API}/agents`)
       if (!res.ok) return
       const data = await res.json()
-      if (data.agents?.length > 0) setAgents(data.agents)
+      setAgents(data.agents || [])
     } catch { /* backend offline — keep seed data */ }
   }, [])
 
@@ -177,7 +177,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const res = await fetch(`${API}/transactions`)
       if (!res.ok) return
       const data = await res.json()
-      if (data.transactions?.length > 0) setTransactions(data.transactions)
+      setTransactions(data.transactions || [])
     } catch { /* offline */ }
   }, [])
 
