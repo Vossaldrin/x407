@@ -22,12 +22,23 @@ export interface Agent {
   expiry: string
   ownerWallet?: string
   initials: string
-  color: 'emerald' | 'amber' | 'iris' | 'rose'
+  color: 'emerald' | 'amber' | 'iris' | 'rose' | 'blue' | 'grey'
   createdAt: string
   txCount: number
   templateId?: string
   emoji?: string
   category?: string
+  customRules?: string
+  identityVerified?: boolean
+  trustGrade?: 'unverified' | 'verified' | 'established' | 'trusted'
+}
+
+export interface TrustChallenge {
+  x407TrustVersion: number
+  trustRequired: string
+  trustCurrent: string
+  reason: string
+  verify: { endpoint: string; method: string }
 }
 
 export interface Transaction {
@@ -141,7 +152,7 @@ interface Store {
   refreshTransactions: () => Promise<void>
   hireAgent: (templateId: string, chain: string, expiry: string, overrides?: { dailyLimit?: number; perTxLimit?: number; actions?: string[] }) => Promise<{ agent: Agent; privateKey: string } | null>
   createAgent: (body: object) => Promise<{ agent: Agent; privateKey: string } | null>
-  quotePayment: (agentId: string, resourceUrl?: string) => Promise<PaymentQuote | null>
+  quotePayment: (agentId: string, resourceUrl?: string) => Promise<PaymentQuote | { trustChallenge: TrustChallenge } | null>
   executePayment: (agentId: string, resourceUrl: string, txHash: string) => Promise<{ ok: boolean; transaction?: Transaction; resource?: any; error?: string }>
   simulatePayment: (agentId: string, recipient: string, amount: number, description: string) => Promise<{ ok: boolean; transaction?: Transaction; error?: string }>
 }
@@ -238,8 +249,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ agentId, resourceUrl }),
       })
+      const data = await res.json().catch(() => ({}))
+      if (res.status === 407) return { trustChallenge: data.detail as TrustChallenge }
       if (!res.ok) return null
-      return await res.json()
+      return data
     } catch { return null }
   }, [])
 
@@ -251,7 +264,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ agentId, resourceUrl, txHash }),
       })
       const data = await res.json()
-      if (!res.ok) return { ok: false, error: data.detail || 'Payment execution failed' }
+      if (!res.ok) return { ok: false, error: typeof data.detail === 'string' ? data.detail : 'Payment execution failed' }
       if (data.transaction) setTransactions(p => [data.transaction, ...p])
       if (data.transaction) updateAgent(agentId, {
         spentToday: (agents.find(a => a.id === agentId)?.spentToday || 0) + data.transaction.amount,
@@ -300,5 +313,5 @@ export function shortAddr(addr: string): string {
   return addr.slice(0, 6) + '…' + addr.slice(-4)
 }
 export function accentColor(color: string): string {
-  return { emerald: '#4CAF50', amber: '#FFD600', iris: '#7C6DF8', rose: '#F87171' }[color] ?? '#4CAF50'
+  return { emerald: '#4CAF50', amber: '#FFD600', iris: '#7C6DF8', rose: '#F87171', blue: '#4A9EFF', grey: '#9CA3AF' }[color] ?? '#4CAF50'
 }

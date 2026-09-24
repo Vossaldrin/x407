@@ -28,6 +28,7 @@ import x407
 import llm
 import dex
 import ai_providers
+import trust
 
 app = FastAPI(title="x407 API", version="0.3.0", docs_url="/docs")
 
@@ -238,6 +239,10 @@ class AgentCreate(BaseModel):
     actions: List[str] = ["pay_api", "fetch_data"]
     ownerWallet: Optional[str] = None
     color: str = "emerald"
+    customRules: Optional[str] = None
+
+class VerifyIdentityRequest(BaseModel):
+    signature: str
 
 class HireRequest(BaseModel):
     templateId: str
@@ -345,10 +350,12 @@ def build_agent(body: AgentCreate, template_id: str = None) -> dict:
         "txCount": 0,
         "templateId": template_id,
         "createdAt": datetime.utcnow().isoformat()[:10],
+        "customRules": body.customRules or "",
+        "identityVerified": False,
     }
 
 def safe(agent: dict) -> dict:
-    return {k: v for k, v in agent.items() if k != "privateKey"}
+    return {**{k: v for k, v in agent.items() if k != "privateKey"}, "trustGrade": trust.trust_grade(agent)}
 
 # ── Health ────────────────────────────────────────────────────────────────────
 @app.get("/")
@@ -396,7 +403,7 @@ def hire_agent(body: HireRequest):
     agents_db[agent["id"]] = agent
 
     return {
-        "agent": agent,
+        "agent": safe(agent),
         "privateKey": private_key,
         "warning": "Save your private key now — it will never be shown again.",
     }
@@ -411,7 +418,7 @@ def create_agent(body: AgentCreate):
     agent = build_agent(body)
     private_key = agent.pop("privateKey")
     agents_db[agent["id"]] = agent
-    return {"agent": agent, "privateKey": private_key,
+    return {"agent": safe(agent), "privateKey": private_key,
             "warning": "Save your private key now — it will never be shown again."}
 
 @app.get("/agents/{agent_id}")
@@ -435,6 +442,19 @@ def revoke_agent(agent_id: str):
         raise HTTPException(404, "Agent not found")
     agents_db[agent_id]["status"] = "expired"
     return {"ok": True, "id": agent_id, "status": "expired"}
+
+@app.post("/agents/{agent_id}/verify-identity")
+def verify_identity(agent_id: str, body: VerifyIdentityRequest):
+    """Real HTTP 407 trust layer — the agent proves control of its own wallet
+    by signing an EIP-712 attestation client-side (see trust.py). Never sees
+    the private key, only the resulting signature."""
+    agent = agents_db.get(agent_id)
+    if not agent:
+        raise HTTPException(404, "Agent not found")
+    if not trust.verify_identity_signature(agent, body.signature):
+        raise HTTPException(400, "Signature does not match this agent's wallet")
+    agent["identityVerified"] = True
+    return {"ok": True, "identityVerified": True, "trustGrade": trust.trust_grade(agent)}
 
 # ── Payments (simulated ledger) ────────────────────────────────────────────────
 @app.post("/payments", status_code=201)
@@ -545,6 +565,7 @@ async def quote_payment(body: QuoteRequest):
         raise HTTPException(502, "Malformed 402 response: no 'accepts' entry")
 
     amount = float(accept["amount"])
+    trust.check_trust(agent, amount)
     x407.check_limits(agent, amount)
 
     _last_quote[body.agentId] = {"resourceUrl": resource_url, "accept": accept}
@@ -574,6 +595,7 @@ async def execute_payment(body: ExecuteRequest):
             "status": "blocked", "reason": reason, "hash": body.txHash, "real": True,
         })
 
+    trust.check_trust(agent, amount)
     x407.check_limits(agent, amount, blocked_cb=blocked)
 
     try:
@@ -614,6 +636,7 @@ def defi_quote(agentId: str, fromToken: str, toToken: str, amountIn: float):
 
     quote = dex.get_best_quote(fromToken, toToken, amountIn)
     notional = amountIn if fromToken == "USDC" else quote["amountOut"]
+    trust.check_trust(agent, notional)
     x407.check_limits(agent, notional)
 
     _last_defi_quote[agentId] = {"fromToken": fromToken, "toToken": toToken, "amountIn": amountIn, "notional": notional}
@@ -640,6 +663,7 @@ def defi_execute(body: DefiExecuteRequest):
             "status": "blocked", "reason": reason, "hash": body.txHash, "real": True,
         })
 
+    trust.check_trust(agent, quoted["notional"])
     x407.check_limits(agent, quoted["notional"], blocked_cb=blocked)
 
     try:
@@ -826,12 +850,14 @@ def agent_chat(body: ChatRequest):
         raise HTTPException(404, "Agent not found")
 
     tool = TOOL_BY_FLOW.get(body.flowType)
+    custom_rules = (agent.get("customRules") or "").strip()
     system = (
         f"You are {agent['name']}, an autonomous crypto agent talking to your owner. "
         f"Your allowed actions are: {', '.join(agent['allowedActions'])}. "
         f"Daily limit ${agent['dailyLimit']}, per-transaction cap ${agent['perTxLimit']}, "
         f"spent so far today ${agent['spentToday']}. "
-        "If the user describes a concrete task you can help with, call the matching tool "
+        + (f"Your owner also set these specific rules for you — follow them: {custom_rules} " if custom_rules else "")
+        + "If the user describes a concrete task you can help with, call the matching tool "
         "with your best-guess parameters instead of asking clarifying questions — the user "
         "will review and confirm the exact details before anything executes. "
         "For general questions, just answer directly in plain text."

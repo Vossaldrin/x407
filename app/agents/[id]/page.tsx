@@ -10,6 +10,7 @@ import { FinanceFlow } from '@/components/agents/FinanceFlow'
 import { TravelFlow } from '@/components/agents/TravelFlow'
 import { DefiFlow } from '@/components/agents/DefiFlow'
 import { AgentChat } from '@/components/agents/AgentChat'
+import { VerifyIdentityCard } from '@/components/agents/VerifyIdentityCard'
 import { StaticFallback } from '@/components/agents/OrbFallback'
 import { ProposedAction } from '@/lib/agent-chat'
 
@@ -55,6 +56,10 @@ export default function AgentDetailPage() {
 
   const accent = accentColor(agent.color)
   const flow = flowFor(agent)
+  const trustBadge: Record<string, string> = {
+    unverified: 'badge-gray', verified: 'badge-yellow', established: 'badge-green', trusted: 'badge-green',
+  }
+  const trustGrade = agent.trustGrade || 'unverified'
 
   return (
     <div className="animate-up gap-pad" style={{ maxWidth: 720 }}>
@@ -62,7 +67,7 @@ export default function AgentDetailPage() {
         ← Back to passports
       </Link>
 
-      <div className="card" style={{ marginBottom: 20, display: 'flex', justifyContent: 'center', padding: '28px 0' }}>
+      <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'center', padding: '28px 0' }}>
         <div style={{ width: 150, height: 150 }}>
           <AgentOrb color={accent} status={agent.status} />
         </div>
@@ -83,9 +88,14 @@ export default function AgentDetailPage() {
               </div>
             </div>
           </div>
-          <span className={`badge ${agent.status === 'active' ? 'badge-green' : 'badge-gray'}`}>{agent.status}</span>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span className={`badge ${trustBadge[trustGrade]}`} title="HTTP 407 trust grade">{trustGrade}</span>
+            <span className={`badge ${agent.status === 'active' ? 'badge-green' : 'badge-gray'}`}>{agent.status}</span>
+          </div>
         </div>
       </div>
+
+      <VerifyIdentityCard agent={agent} />
 
       {flow !== 'none' && <AgentChat agent={agent} flowType={flow} onPropose={setChatProposal} />}
 

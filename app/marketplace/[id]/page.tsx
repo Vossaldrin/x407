@@ -20,7 +20,7 @@ export default function TemplateDetailPage() {
         <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink2)', marginBottom: 6 }}>
           {loading ? 'Loading…' : 'Agent template not found'}
         </div>
-        {!loading && <Link href="/marketplace" className="btn-ghost">← Back to marketplace</Link>}
+        {!loading && <Link href="/marketplace" className="btn-ghost">← Back to BotMart</Link>}
       </div>
     )
   }
@@ -34,7 +34,7 @@ export default function TemplateDetailPage() {
       {hiring && <HireModal tpl={tpl} onClose={() => setHiring(false)} />}
 
       <Link href="/marketplace" style={{ fontSize: 12, color: 'var(--ink3)', textDecoration: 'none', display: 'inline-block', marginBottom: 16 }}>
-        ← Back to marketplace
+        ← Back to BotMart
       </Link>
 
       {/* Header */}

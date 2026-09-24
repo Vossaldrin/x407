@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Agent } from '@/lib/store'
+import { Agent, TrustChallenge } from '@/lib/store'
 import { executeSwap } from '@/lib/defi-swap'
 import { agentAddressFromKey } from '@/lib/x407-agent-pay'
+import { TrustChallengeNotice } from '@/components/agents/TrustChallengeNotice'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -27,17 +28,24 @@ export function DefiFlow({ agent, initialFromToken, initialAmountIn }: {
   const [error, setError] = useState('')
   const [txHash, setTxHash] = useState('')
   const [insight, setInsight] = useState<string | null>(null)
+  const [trustChallenge, setTrustChallenge] = useState<TrustChallenge | null>(null)
 
   const toToken = fromToken === 'ETH' ? 'USDC' : 'ETH'
 
   const getQuote = async () => {
     setError('')
     setInsight(null)
+    setTrustChallenge(null)
     try {
       const res = await fetch(`${API}/defi/quote?agentId=${agent.id}&fromToken=${fromToken}&toToken=${toToken}&amountIn=${amountIn}`)
       const data = await res.json()
+      if (res.status === 407) {
+        setTrustChallenge(data.detail as TrustChallenge)
+        setStep('error')
+        return
+      }
       if (!res.ok) {
-        setError(data.detail || 'Could not get a quote')
+        setError(typeof data.detail === 'string' ? data.detail : 'Could not get a quote')
         setStep('error')
         return
       }
@@ -84,7 +92,7 @@ export function DefiFlow({ agent, initialFromToken, initialAmountIn }: {
     })
     const data = await exec.json()
     if (!exec.ok) {
-      setError(data.detail || 'Backend could not verify the swap')
+      setError(typeof data.detail === 'string' ? data.detail : 'Backend could not verify the swap')
       setStep('error')
       return
     }
@@ -175,8 +183,10 @@ export function DefiFlow({ agent, initialFromToken, initialAmountIn }: {
 
       {step === 'error' && (
         <>
-          <div style={{ fontSize: 12.5, color: 'var(--rose)', marginBottom: 18, lineHeight: 1.5 }}>{error}</div>
-          <button className="btn-ghost" style={{ width: '100%' }} onClick={() => { setError(''); setStep('form') }}>Back</button>
+          {trustChallenge
+            ? <div style={{ marginBottom: 18 }}><TrustChallengeNotice challenge={trustChallenge} /></div>
+            : <div style={{ fontSize: 12.5, color: 'var(--rose)', marginBottom: 18, lineHeight: 1.5 }}>{error}</div>}
+          <button className="btn-ghost" style={{ width: '100%' }} onClick={() => { setError(''); setTrustChallenge(null); setStep('form') }}>Back</button>
         </>
       )}
     </div>

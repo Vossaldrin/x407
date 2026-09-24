@@ -1,8 +1,15 @@
 'use client'
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { useStore, MarketplaceTemplate, accentColor } from '@/lib/store'
 import Link from 'next/link'
 import { Search, SlidersHorizontal, Star } from 'lucide-react'
+import { StaticFallback } from '@/components/agents/OrbFallback'
+
+const OrbIcon = dynamic(() => import('@/components/agents/OrbIcon'), {
+  ssr: false,
+  loading: () => <StaticFallback color="var(--ink3)" />,
+})
 
 const CATEGORIES = ['All', 'Finance', 'Shopping', 'Research', 'Travel', 'Dev tools']
 
@@ -12,7 +19,7 @@ function AgentCard({ tpl }: { tpl: MarketplaceTemplate }) {
   return (
     <Link href={`/marketplace/${tpl.id}`} className="mkt-card" style={{ textDecoration: 'none', display: 'block' }}>
       <div className="mkt-card-top">
-        <div className="mkt-icon" style={{ background: `linear-gradient(135deg, ${accent}40, ${accent}14)` }}>{tpl.emoji}</div>
+        <div className="mkt-icon" style={{ background: `linear-gradient(135deg, ${accent}40, ${accent}14)` }}><OrbIcon color={accent} /></div>
         <span className={`price-tag ${isFree ? 'price-free' : 'price-paid'}`}>{tpl.price}</span>
       </div>
       <div className="mkt-name">{tpl.name}</div>
@@ -55,7 +62,7 @@ export default function MarketplacePage() {
     <div className="animate-up gap-pad">
       <div style={{ marginBottom: 26 }}>
         <h1 style={{ fontSize: 32, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.03em', lineHeight: 1, marginBottom: 8 }}>
-          Agent Marketplace
+          BotMart
         </h1>
         <p style={{ fontSize: 14, color: 'var(--ink3)' }}>Hire autonomous AI agents with real crypto wallets.</p>
       </div>
@@ -83,7 +90,7 @@ export default function MarketplacePage() {
 
       {templates.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--ink3)', fontSize: 13 }}>
-          Loading marketplace… (make sure the backend is running on port 8000)
+          Loading BotMart… (make sure the backend is running on port 8000)
         </div>
       ) : (
         <div className="mkt-grid stagger">

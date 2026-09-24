@@ -7,7 +7,7 @@ export default function NotFound() {
       <div style={{ fontSize: 48, fontWeight: 700, fontFamily: 'var(--mono)', color: 'var(--ink3)', letterSpacing: '-3px' }}>⬡</div>
       <div style={{ fontSize: 15, color: 'var(--ink2)' }}>This page doesn't exist</div>
       <Link href="/marketplace" className="btn-primary" style={{ textDecoration: 'none', marginTop: 8 }}>
-        Back to marketplace
+        Back to BotMart
       </Link>
     </div>
   )

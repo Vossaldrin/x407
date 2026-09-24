@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useStore } from '@/lib/store'
+import { useStore, accentColor } from '@/lib/store'
 import { sendFunds, hasMetaMask } from '@/lib/wallet-connect'
 import Link from 'next/link'
 import { X } from 'lucide-react'
@@ -204,7 +204,7 @@ export default function WalletPage() {
         </div>
         <div className="wallet-agent-row" style={{ gridTemplateColumns: `repeat(${Math.min(agents.length, 4) || 1}, 1fr)` }}>
           {agents.map((a, i) => {
-            const accent = { emerald: 'var(--green)', amber: 'var(--yellow)', iris: '#7C6DF8', rose: 'var(--rose)' }[a.color] ?? 'var(--green)'
+            const accent = accentColor(a.color)
             return (
               <div key={a.id} style={{ padding: '16px 18px', borderRight: i < agents.length - 1 ? '0.5px solid var(--line)' : 'none' }}>
                 <div className="mono" style={{ fontSize: 9, color: 'var(--ink3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 5 }}>{a.initials} · {a.chain}</div>

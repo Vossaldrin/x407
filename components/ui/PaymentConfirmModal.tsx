@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useStore, PaymentQuote } from '@/lib/store'
+import { useStore, PaymentQuote, TrustChallenge } from '@/lib/store'
 import { payWithAgentWallet, agentAddressFromKey } from '@/lib/x407-agent-pay'
+import { TrustChallengeNotice } from '@/components/agents/TrustChallengeNotice'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -19,11 +20,14 @@ export function PaymentConfirmModal({ agentId, resourceUrl, onClose }: {
   const [error, setError]     = useState('')
   const [txHash, setTxHash]   = useState('')
   const [insight, setInsight] = useState<string | null>(null)
+  const [trustChallenge, setTrustChallenge] = useState<TrustChallenge | null>(null)
 
   const load = async () => {
     setStep('loading')
     setInsight(null)
+    setTrustChallenge(null)
     const q = await quotePayment(agentId, resourceUrl)
+    if (q && 'trustChallenge' in q) { setTrustChallenge(q.trustChallenge); setStep('error'); return }
     if (!q) { setError('Could not get a payment quote — is the backend reachable and is DEMO_MERCHANT_ADDRESS configured?'); setStep('error'); return }
     setQuote(q)
     setStep('review')
@@ -141,7 +145,9 @@ export function PaymentConfirmModal({ agentId, resourceUrl, onClose }: {
 
         {step === 'error' && (
           <>
-            <div style={{ fontSize: 12.5, color: 'var(--rose)', marginBottom: 18, lineHeight: 1.5 }}>{error}</div>
+            {trustChallenge
+              ? <div style={{ marginBottom: 18 }}><TrustChallengeNotice challenge={trustChallenge} /></div>
+              : <div style={{ fontSize: 12.5, color: 'var(--rose)', marginBottom: 18, lineHeight: 1.5 }}>{error}</div>}
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn-ghost" style={{ flex: 1 }} onClick={onClose}>Close</button>
               <button className="btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { setError(''); load() }}>Retry</button>

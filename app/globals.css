@@ -252,10 +252,12 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
 .mkt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 
 .mkt-card {
-  background: var(--card); border: 1px solid var(--line); border-radius: 26px;
+  background: rgba(17,17,17,0.55); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--line); border-radius: 26px;
   padding: 20px; cursor: pointer; transition: all 0.3s cubic-bezier(.4,0,.2,1);
   opacity: 0; animation: cardIn 0.5s cubic-bezier(.4,0,.2,1) forwards;
 }
+[data-theme="light"] .mkt-card { background: rgba(255,255,255,0.55); }
 .mkt-card:hover {
   border-color: var(--neon);
   transform: translateY(-4px);
@@ -277,6 +279,25 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
 .mkt-rating { color: var(--yellow); font-weight: 500; }
 .mkt-uses   { color: var(--ink3); }
 .mkt-cat    { margin-left: auto; padding: 2px 8px; border-radius: 5px; background: var(--line2); color: var(--ink3); }
+
+/* ── My Agents — same glassmorphic tile family as BotMart's .mkt-card ─── */
+.agent-tile {
+  background: rgba(17,17,17,0.55); backdrop-filter: blur(20px) saturate(1.4); -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid var(--line); border-radius: 26px; padding: 20px;
+  transition: all 0.3s cubic-bezier(.4,0,.2,1);
+  opacity: 0; animation: cardIn 0.5s cubic-bezier(.4,0,.2,1) forwards;
+}
+[data-theme="light"] .agent-tile { background: rgba(255,255,255,0.55); }
+.agent-tile:hover { border-color: var(--neon); transform: translateY(-4px); box-shadow: 0 16px 40px rgba(57,255,136,0.15); }
+.agent-tile-expired { opacity: 0.55; }
+.agent-tile-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.agent-tile-icon { width: 46px; height: 46px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: transform 0.3s; }
+.agent-tile:hover .agent-tile-icon { transform: scale(1.1) rotate(-4deg); }
+.agent-tile-name { font-size: 14px; font-weight: 600; color: var(--ink); }
+.agent-tile-addr { font-size: 10.5px; color: var(--ink3); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.agent-tile-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.agent-tile-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 14px; border-top: 1px solid var(--line); }
+.agent-tile-create { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border-style: dashed; min-height: 260px; cursor: pointer; }
 
 .hire-btn {
   width: 100%; margin-top: 14px; padding: 10px; border-radius: 12px; border: 1px solid var(--neon);
@@ -402,9 +423,10 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
   font-size: 22px;
 }
 
-/* ── Landing page — dark + neon green + monospace (x407 brand) ──────── */
-.landing-root { font-family: var(--mono); position: relative; }
-.landing-root .btn-primary, .landing-root .btn-primary-lg, .landing-root .btn-ghost-lg { font-family: var(--mono); }
+/* ── Landing page — dark + neon green (x407 brand); base font matches the
+   rest of the site (--font), mono reserved for code/labels like everywhere
+   else (eyebrow, protocol snippet, step numbers, stat values) ──────────── */
+.landing-root { position: relative; }
 
 /* Ambient background blobs — drift independently behind the whole page as you scroll */
 .landing-root::before, .landing-root::after {
@@ -444,9 +466,14 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
   margin: 0 auto 20px; max-width: 700px;
 }
 .hero-subtitle { font-size: 15px; color: var(--ink2); line-height: 1.7; max-width: 520px; margin: 0 auto 40px; }
-.hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.hero-ctas { display: flex; gap: 24px; justify-content: center; align-items: center; flex-wrap: wrap; }
 .hero-ctas .btn-primary-lg svg { transition: transform 0.25s cubic-bezier(.4,0,.2,1); }
 .hero-ctas .btn-primary-lg:hover svg { transform: translateX(3px); }
+.hero-cta-plain {
+  font-size: 14px; font-weight: 500; color: var(--ink2); text-decoration: underline;
+  text-underline-offset: 3px; text-decoration-color: var(--line2); transition: color 0.2s, text-decoration-color 0.2s;
+}
+.hero-cta-plain:hover { color: var(--ink); text-decoration-color: var(--ink2); }
 
 /* Hero content fades/slides in on load, staggered — always visible on first paint so it animates on mount, not on scroll */
 .hero-content > * { opacity: 0; animation: cardIn 0.7s cubic-bezier(.4,0,.2,1) forwards; }
@@ -475,6 +502,7 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
   color: var(--ink3); background: var(--card2); border: 1px solid var(--line2); border-radius: 5px;
   padding: 2px 7px; margin-left: 8px; vertical-align: middle;
 }
+.feature-badge-live { color: var(--neon); background: var(--neon-dim); border-color: var(--neon); }
 
 .view-details { margin-top: 12px; font-size: 11.5px; color: var(--neon); font-weight: 500; }
 
@@ -509,7 +537,7 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
 
 .landing-stats-bar { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 64px 32px; }
 .landing-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; max-width: 900px; margin: 0 auto; text-align: center; }
-.landing-stat-value { font-size: 30px; font-weight: 700; color: var(--neon); letter-spacing: -0.03em; margin-bottom: 4px; text-shadow: 0 0 20px rgba(57,255,136,0.25); }
+.landing-stat-value { font-family: var(--mono); font-size: 30px; font-weight: 700; color: var(--neon); letter-spacing: -0.03em; margin-bottom: 4px; text-shadow: 0 0 20px rgba(57,255,136,0.25); }
 .landing-stat-label { font-size: 12.5px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* ── Protocol code-block (x402.org-style terminal snippet) ───────────── */
@@ -553,9 +581,54 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
 
 .agent-strip-wrap { border-top: 1px solid var(--line); padding: 80px 0; }
 .agent-strip-head { padding: 0 32px; margin-bottom: 20px; font-size: 12px; font-weight: 600; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.1em; }
-.agent-strip { display: flex; gap: 12px; padding: 0 32px 8px; overflow-x: auto; }
+.agent-strip-viewport {
+  overflow: hidden; padding: 0 0 8px;
+  mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 32px, #000 calc(100% - 32px), transparent);
+}
+.agent-strip-marquee { display: flex; gap: 12px; width: max-content; padding: 0 32px; animation: marquee 34s linear infinite; }
+.agent-strip-viewport:hover .agent-strip-marquee { animation-play-state: paused; }
 .agent-strip-card { flex-shrink: 0; width: 220px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; transition: all 0.25s; }
 .agent-strip-card:hover { border-color: var(--neon); transform: translateY(-3px) scale(1.02); box-shadow: 0 14px 32px rgba(57,255,136,0.12); }
+
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ── Comparison table (Without x407 / With x407) ─────────────────────── */
+.compare-table {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+  max-width: 900px; margin: 0 auto;
+}
+.compare-head { padding: 14px 22px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; background: var(--card); }
+.compare-head.compare-without { color: var(--ink3); }
+.compare-head.compare-with { color: var(--neon); }
+.compare-cell { display: flex; align-items: flex-start; gap: 10px; padding: 16px 22px; font-size: 13px; line-height: 1.55; background: var(--card2); }
+.compare-cell.compare-without { color: var(--ink3); }
+.compare-cell.compare-without svg { flex-shrink: 0; margin-top: 2px; color: var(--ink3); }
+.compare-cell.compare-with { color: var(--ink); background: var(--neon-dim); }
+.compare-cell.compare-with svg { flex-shrink: 0; margin-top: 2px; color: var(--neon); }
+
+/* ── Built-on tech row ────────────────────────────────────────────────── */
+.built-on { text-align: center; padding: 56px 32px; border-top: 1px solid var(--line); }
+.built-on-label { display: block; font-size: 11px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 18px; }
+.built-on-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 28px; }
+.built-on-item { font-size: 14px; font-weight: 600; color: var(--ink2); font-family: var(--mono); opacity: 0.65; transition: opacity 0.2s, color 0.2s; }
+.built-on-item:hover { opacity: 1; color: var(--neon); }
+
+/* ── FAQ accordion ────────────────────────────────────────────────────── */
+.faq-list { display: flex; flex-direction: column; gap: 10px; }
+.faq-item { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--card); }
+.faq-question {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 18px 20px; background: none; border: none; cursor: pointer; text-align: left;
+  font-size: 14px; font-weight: 600; color: var(--ink); font-family: var(--font);
+}
+.faq-chevron { flex-shrink: 0; color: var(--ink3); transition: transform 0.25s; }
+.faq-answer { padding: 0 20px 20px; font-size: 13px; color: var(--ink2); line-height: 1.65; }
+
+@media (max-width: 640px) {
+  .compare-table { grid-template-columns: 1fr; }
+}
 
 .landing-cta { border-top: 1px solid var(--line); padding: 140px 32px; text-align: center; }
 .landing-cta h2 { font-size: 38px; font-weight: 700; letter-spacing: -0.03em; color: var(--ink); margin-bottom: 16px; }
@@ -639,7 +712,7 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-gradient, .hero-glow-follow, .landing-root::before, .landing-root::after { animation: none !important; }
+  .hero-gradient, .hero-glow-follow, .landing-root::before, .landing-root::after, .agent-strip-marquee { animation: none !important; }
   .mkt-card, .reveal, .stagger > *, .hero-content > * {
     animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important;
   }

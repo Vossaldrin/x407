@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { Agent, useStore } from '@/lib/store'
+import { Agent, TrustChallenge, useStore } from '@/lib/store'
 import { payWithAgentWallet, agentAddressFromKey } from '@/lib/x407-agent-pay'
+import { TrustChallengeNotice } from '@/components/agents/TrustChallengeNotice'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -36,6 +37,7 @@ export function ResearchFlow({ agent, initialTopic, initialSourceIds }: {
   const [report, setReport] = useState('')
   const [sourceSuggestion, setSourceSuggestion] = useState<string | null>(null)
   const [suggesting, setSuggesting] = useState(false)
+  const [trustChallenge, setTrustChallenge] = useState<TrustChallenge | null>(null)
 
   useEffect(() => {
     fetch(`${API}/demo/sources`).then(r => r.json()).then(d => setSources(d.sources || [])).catch(() => {})
@@ -78,18 +80,26 @@ export function ResearchFlow({ agent, initialTopic, initialSourceIds }: {
     }
 
     setStep('paying')
+    setTrustChallenge(null)
     const results: PaidSource[] = []
     for (const sourceId of selected) {
       const source = sources.find(s => s.id === sourceId)!
       setProgress(`Quoting ${source.name}…`)
       const resourceUrl = `${API}/demo/resource/${sourceId}`
-      const quote = await quotePayment(agent.id, resourceUrl)
-      if (!quote) {
+      const quoteResult = await quotePayment(agent.id, resourceUrl)
+      if (quoteResult && 'trustChallenge' in quoteResult) {
+        setPrivKey('')
+        setTrustChallenge(quoteResult.trustChallenge)
+        setStep('error')
+        return
+      }
+      if (!quoteResult) {
         setPrivKey('')
         setError(`Could not get a quote for ${source.name}`)
         setStep('error')
         return
       }
+      const quote = quoteResult
 
       setProgress(`Paying for ${source.name}…`)
       const pay = await payWithAgentWallet(privKey, quote.quote.payTo, parseFloat(quote.quote.amount))
@@ -233,8 +243,10 @@ export function ResearchFlow({ agent, initialTopic, initialSourceIds }: {
 
       {step === 'error' && (
         <>
-          <div style={{ fontSize: 12.5, color: 'var(--rose)', marginBottom: 18, lineHeight: 1.5 }}>{error}</div>
-          <button className="btn-ghost" style={{ width: '100%' }} onClick={() => { setError(''); setStep('form') }}>Back</button>
+          {trustChallenge
+            ? <div style={{ marginBottom: 18 }}><TrustChallengeNotice challenge={trustChallenge} /></div>
+            : <div style={{ fontSize: 12.5, color: 'var(--rose)', marginBottom: 18, lineHeight: 1.5 }}>{error}</div>}
+          <button className="btn-ghost" style={{ width: '100%' }} onClick={() => { setError(''); setTrustChallenge(null); setStep('form') }}>Back</button>
         </>
       )}
     </div>

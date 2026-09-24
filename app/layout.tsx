@@ -6,14 +6,15 @@ import { useState, useEffect } from 'react'
 import { StoreProvider } from '@/lib/store'
 import { connectWallet } from '@/lib/wallet-connect'
 import { X407Mark } from '@/components/brand/X407Mark'
-import { Store, Bot, Plus, Wallet as WalletIcon, ArrowLeftRight, Bell } from 'lucide-react'
+import { Store, Bot, Plus, Wallet as WalletIcon, ArrowLeftRight, Bell, Terminal } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { href: '/marketplace',  label: 'Marketplace',  icon: Store },
+  { href: '/marketplace',  label: 'BotMart',      icon: Store },
   { href: '/passports',    label: 'My Agents',    icon: Bot },
   { href: '/create',       label: 'Create Agent', icon: Plus },
   { href: '/wallet',       label: 'Wallet',       icon: WalletIcon },
   { href: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
+  { href: '/developers',   label: 'Developers',   icon: Terminal },
 ]
 
 function isActive(path: string, href: string): boolean {
@@ -116,7 +117,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
-        <title>x407 — Autonomous Agent Marketplace</title>
+        <title>x407 — Identity & Wallet Rail for Autonomous Agents</title>
         <meta name="description" content="Hire and deploy autonomous AI agents" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%2339FF88'/><text x='50' y='70' font-size='58' font-family='monospace' font-weight='700' fill='%2304140A' text-anchor='middle'>&gt;</text></svg>" />

@@ -1,17 +1,24 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { useStore, accentColor } from '@/lib/store'
+import { StaticFallback } from '@/components/agents/OrbFallback'
+
+const OrbIcon = dynamic(() => import('@/components/agents/OrbIcon'), {
+  ssr: false,
+  loading: () => <StaticFallback color="var(--ink3)" />,
+})
 
 const CHAINS  = ['Base','Ethereum','Arbitrum','Optimism','Polygon'] as const
-const COLORS  = ['emerald','amber','iris','rose'] as const
+const COLORS  = ['emerald','amber','iris','rose','blue','grey'] as const
 const ACTIONS = ['pay_api','fetch_data','buy_compute','trade','swap','shop','book_travel','deploy','scan']
 
 type F = {
   name: string; chain: string; dailyLimit: string; perTxLimit: string
-  expiry: string; actions: string[]; ownerWallet: string; color: string
+  expiry: string; actions: string[]; ownerWallet: string; color: string; customRules: string
 }
-const INIT: F = { name:'', chain:'Base', dailyLimit:'500', perTxLimit:'50', expiry:'2026-12-31', actions:['pay_api','fetch_data'], ownerWallet:'', color:'emerald' }
+const INIT: F = { name:'', chain:'Base', dailyLimit:'500', perTxLimit:'50', expiry:'2026-12-31', actions:['pay_api','fetch_data'], ownerWallet:'', color:'emerald', customRules:'' }
 
 export default function CreatePage() {
   const { createAgent } = useStore()
@@ -37,6 +44,7 @@ export default function CreatePage() {
       actions: form.actions,
       ownerWallet: form.ownerWallet || null,
       color: form.color,
+      customRules: form.customRules.trim() || null,
     })
     setDepl(false)
     if (result) {
@@ -139,6 +147,18 @@ export default function CreatePage() {
             <input className="field-input" type="text" placeholder="0x..." value={form.ownerWallet} onChange={e => set('ownerWallet', e.target.value)} />
           </div>
 
+          <div>
+            <div className="field-label">Custom rules (optional)</div>
+            <textarea
+              className="field-input" rows={4} style={{ resize: 'vertical', lineHeight: 1.5 }}
+              placeholder="e.g. Never swap more than 20% of balance in one trade. Always prefer the cheapest data source. Ask before booking anything over $200."
+              value={form.customRules} onChange={e => set('customRules', e.target.value)}
+            />
+            <div style={{ fontSize: 10.5, color: 'var(--ink3)', marginTop: 6, lineHeight: 1.5 }}>
+              Plain language — folded into this agent's instructions alongside its spend limits, so it actually follows them when you chat with it.
+            </div>
+          </div>
+
           <button className="btn-primary-lg" style={{ width: '100%', opacity: deploying || !form.name ? 0.6 : 1 }}
             onClick={deploy} disabled={deploying || !form.name.trim()}>
             {deploying ? 'Deploying passport…' : 'Deploy passport →'}
@@ -150,6 +170,9 @@ export default function CreatePage() {
           <div className="field-label" style={{ marginBottom: 10 }}>Live preview</div>
           <div className="passport-card">
             <div className="passport-stripe" style={{ background: `linear-gradient(90deg, ${accent}, transparent)` }} />
+            <div style={{ width: 64, height: 64, margin: '4px auto 14px' }}>
+              <OrbIcon color={accent} />
+            </div>
             <div className="passport-label">x407 Passport</div>
             <div className="passport-name" style={{ color: form.name ? 'var(--ink)' : 'var(--ink3)' }}>
               {form.name || 'Agent name…'}

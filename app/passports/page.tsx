@@ -1,15 +1,24 @@
 'use client'
+import dynamic from 'next/dynamic'
 import { useStore, Agent, accentColor } from '@/lib/store'
 import Link from 'next/link'
-import { Wallet, Pause, Trash2 } from 'lucide-react'
+import { Wallet, Pause, Trash2, Plus } from 'lucide-react'
+import { StaticFallback } from '@/components/agents/OrbFallback'
+
+const OrbIcon = dynamic(() => import('@/components/agents/OrbIcon'), {
+  ssr: false,
+  loading: () => <StaticFallback color="var(--ink3)" />,
+})
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
-function AgentListCard({ agent }: { agent: Agent }) {
+function AgentTile({ agent }: { agent: Agent }) {
   const accent = accentColor(agent.color)
   const pct = agent.dailyLimit > 0 ? Math.min((agent.spentToday / agent.dailyLimit) * 100, 100) : 0
   const fillClass = pct >= 90 ? 'over' : pct >= 70 ? 'warn' : ''
   const isExpired = agent.status === 'expired'
+  const visibleActions = agent.allowedActions.slice(0, 3)
+  const extraActions = agent.allowedActions.length - visibleActions.length
 
   const statusBadge: Record<string, string> = {
     active: 'badge-green', idle: 'badge-yellow', expired: 'badge-red', paused: 'badge-gray',
@@ -22,41 +31,30 @@ function AgentListCard({ agent }: { agent: Agent }) {
   }
 
   return (
-    <div className="card card-pad" style={{ opacity: isExpired ? 0.55 : 1, transition: 'all 0.15s' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18, gap: 12 }}>
-        <Link href={`/agents/${agent.id}`} style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit', flex: 1, minWidth: 0 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--card2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0, border: `1px solid ${accent}33` }}>
-            {agent.emoji || '🤖'}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{agent.name}</span>
-              <span className={`badge ${statusBadge[agent.status] ?? 'badge-gray'}`}>{agent.status}</span>
-              <span style={{ fontSize: 10.5, fontFamily: 'var(--mono)', fontWeight: 500, color: 'var(--ink3)', background: 'var(--card2)', padding: '2px 7px', borderRadius: 5 }}>{agent.chain}</span>
-            </div>
-            <div className="mono" style={{ fontSize: 10.5, color: 'var(--ink3)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{agent.shortAddr}</div>
-          </div>
-        </Link>
-
-        {!isExpired && (
-          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-            <Link href="/wallet" className="icon-btn" title="Fund this agent" aria-label="Fund"><Wallet size={13} /></Link>
-            <button className="icon-btn" title="Pause" aria-label="Pause"><Pause size={13} /></button>
-            <button className="icon-btn icon-btn-danger" onClick={revoke} title="Revoke" aria-label="Revoke"><Trash2 size={13} /></button>
-          </div>
-        )}
+    <div className={`agent-tile ${isExpired ? 'agent-tile-expired' : ''}`}>
+      <div className="agent-tile-top">
+        <div className="agent-tile-icon" style={{ background: `linear-gradient(135deg, ${accent}40, ${accent}14)` }}>
+          <OrbIcon color={accent} />
+        </div>
+        <span className={`badge ${statusBadge[agent.status] ?? 'badge-gray'}`}>{agent.status}</span>
       </div>
 
+      <Link href={`/agents/${agent.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span className="agent-tile-name">{agent.name}</span>
+          <span style={{ fontSize: 10.5, fontFamily: 'var(--mono)', fontWeight: 500, color: 'var(--ink3)', background: 'var(--card2)', padding: '2px 7px', borderRadius: 5 }}>{agent.chain}</span>
+        </div>
+        <div className="mono agent-tile-addr">{agent.shortAddr}</div>
+      </Link>
+
       {!isExpired && (
-        <div className="passport-stats-grid">
+        <div className="passport-stats-grid" style={{ gap: 16, margin: '16px 0' }}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 6 }}>
               <span style={{ color: 'var(--ink3)' }}>Daily spend</span>
-              <span className="mono" style={{ color: 'var(--ink2)' }}>${agent.spentToday} <span style={{ color: 'var(--ink3)' }}>/ ${agent.dailyLimit}</span></span>
+              <span className="mono" style={{ color: 'var(--ink2)' }}>${agent.spentToday}<span style={{ color: 'var(--ink3)' }}>/${agent.dailyLimit}</span></span>
             </div>
-            <div className="prog-bg">
-              <div className={`prog-fill ${fillClass}`} style={{ width: `${pct}%` }} />
-            </div>
+            <div className="prog-bg"><div className={`prog-fill ${fillClass}`} style={{ width: `${pct}%` }} /></div>
           </div>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, marginBottom: 6 }}>
@@ -68,18 +66,36 @@ function AgentListCard({ agent }: { agent: Agent }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 10.5, color: 'var(--ink3)' }}>Allowed:</span>
-        {agent.allowedActions.map(a => (
-          <span key={a} className="action-tag" style={{ cursor: 'default' }}>{a}</span>
-        ))}
-        <span style={{ fontSize: 10.5, color: 'var(--ink3)', marginLeft: 2 }}>· Hired {agent.createdAt}</span>
+      <div className="agent-tile-actions">
+        {visibleActions.map(a => <span key={a} className="action-tag" style={{ cursor: 'default' }}>{a}</span>)}
+        {extraActions > 0 && <span className="action-tag" style={{ cursor: 'default' }}>+{extraActions}</span>}
       </div>
 
-      {isExpired && (
-        <Link href="/create" className="btn-primary-lg" style={{ width: '100%', marginTop: 16 }}>Renew passport</Link>
-      )}
+      <div className="agent-tile-footer">
+        <span style={{ fontSize: 10, color: 'var(--ink3)' }}>Hired {agent.createdAt}</span>
+        {isExpired ? (
+          <Link href="/create" className="view-details">Renew →</Link>
+        ) : (
+          <div style={{ display: 'flex', gap: 6 }}>
+            <Link href="/wallet" className="icon-btn" title="Fund this agent" aria-label="Fund"><Wallet size={12} /></Link>
+            <button className="icon-btn" title="Pause" aria-label="Pause"><Pause size={12} /></button>
+            <button className="icon-btn icon-btn-danger" onClick={revoke} title="Revoke" aria-label="Revoke"><Trash2 size={12} /></button>
+          </div>
+        )}
+      </div>
     </div>
+  )
+}
+
+function CreateAgentTile() {
+  return (
+    <Link href="/create" style={{ textDecoration: 'none' }}>
+      <div className="agent-tile agent-tile-create">
+        <Plus size={26} color="var(--ink3)" />
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', marginTop: 10 }}>Create new agent</div>
+        <div style={{ fontSize: 11, color: 'var(--ink3)', marginTop: 4 }}>Custom rules, any network</div>
+      </div>
+    </Link>
   )
 }
 
@@ -104,15 +120,16 @@ export default function PassportsPage() {
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>🦅</div>
           <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink2)', marginBottom: 6 }}>No agents yet</div>
-          <div style={{ fontSize: 12, color: 'var(--ink3)', marginBottom: 20 }}>Hire one from the marketplace or create a custom agent</div>
+          <div style={{ fontSize: 12, color: 'var(--ink3)', marginBottom: 20 }}>Hire one from BotMart or create a custom agent</div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-            <Link href="/marketplace" className="btn-ghost-lg">Browse marketplace</Link>
+            <Link href="/marketplace" className="btn-ghost-lg">Browse BotMart</Link>
             <Link href="/create" className="btn-primary-lg">+ Create custom</Link>
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }} className="stagger">
-          {agents.map(a => <AgentListCard key={a.id} agent={a} />)}
+        <div className="mkt-grid stagger">
+          {agents.map(a => <AgentTile key={a.id} agent={a} />)}
+          <CreateAgentTile />
         </div>
       )}
     </div>
