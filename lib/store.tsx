@@ -250,7 +250,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ agentId, resourceUrl }),
       })
       const data = await res.json().catch(() => ({}))
-      if (res.status === 407) return { trustChallenge: data.detail as TrustChallenge }
+      // The trust challenge is real HTTP-407-modeled semantics sent as a 403 —
+      // browsers reject a literal 407 from a normal origin at the network
+      // level (confirmed directly), so detect it by body shape, not status.
+      if (data?.detail?.x407TrustVersion) return { trustChallenge: data.detail as TrustChallenge }
       if (!res.ok) return null
       return data
     } catch { return null }

@@ -1,5 +1,5 @@
 'use client'
-// EIP-712 identity verification for the real HTTP 407 trust layer (backend/trust.py).
+// EIP-712 identity verification for the x407 trust layer (backend/trust.py).
 // Same posture as x407-agent-pay.ts: the private key is supplied for a single
 // client-side signature and never sent to our backend — only the resulting
 // signature is. This shape (domain/types/value) must exactly match trust.py's

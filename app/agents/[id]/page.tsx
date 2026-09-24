@@ -89,7 +89,7 @@ export default function AgentDetailPage() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span className={`badge ${trustBadge[trustGrade]}`} title="HTTP 407 trust grade">{trustGrade}</span>
+            <span className={`badge ${trustBadge[trustGrade]}`} title="x407 trust grade">{trustGrade}</span>
             <span className={`badge ${agent.status === 'active' ? 'badge-green' : 'badge-gray'}`}>{agent.status}</span>
           </div>
         </div>

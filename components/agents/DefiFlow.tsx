@@ -39,7 +39,9 @@ export function DefiFlow({ agent, initialFromToken, initialAmountIn }: {
     try {
       const res = await fetch(`${API}/defi/quote?agentId=${agent.id}&fromToken=${fromToken}&toToken=${toToken}&amountIn=${amountIn}`)
       const data = await res.json()
-      if (res.status === 407) {
+      // Sent as 403, not a literal 407 (browsers reject that at the network
+      // level from a normal origin) — detect by body shape instead.
+      if (data?.detail?.x407TrustVersion) {
         setTrustChallenge(data.detail as TrustChallenge)
         setStep('error')
         return

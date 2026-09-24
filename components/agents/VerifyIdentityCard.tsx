@@ -4,7 +4,7 @@ import { Agent, useStore } from '@/lib/store'
 import { verifyAgentIdentity } from '@/lib/agent-identity'
 import { ShieldCheck } from 'lucide-react'
 
-/** Real EIP-712 identity verification — the client-side half of the HTTP 407
+/** Real EIP-712 identity verification — the client-side half of the x407
  * trust layer (backend/trust.py). Same key-handling posture as payments:
  * the private key is used once, locally, to sign, and never sent anywhere. */
 export function VerifyIdentityCard({ agent }: { agent: Agent }) {
@@ -37,8 +37,8 @@ export function VerifyIdentityCard({ agent }: { agent: Agent }) {
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', marginBottom: 4 }}>Identity unverified</div>
         <div style={{ fontSize: 11.5, color: 'var(--ink3)', lineHeight: 1.5, marginBottom: open ? 12 : 0 }}>
           Payments over $10 need this agent to prove it controls its own wallet first — a real
-          HTTP 407 challenge, not a formality. It signs one EIP-712 message locally; nothing is
-          sent to us but the signature.
+          x407 trust challenge, not a formality. It signs one EIP-712 message locally; nothing
+          is sent to us but the signature.
         </div>
 
         {!open && (

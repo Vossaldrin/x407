@@ -445,8 +445,8 @@ def revoke_agent(agent_id: str):
 
 @app.post("/agents/{agent_id}/verify-identity")
 def verify_identity(agent_id: str, body: VerifyIdentityRequest):
-    """Real HTTP 407 trust layer — the agent proves control of its own wallet
-    by signing an EIP-712 attestation client-side (see trust.py). Never sees
+    """x407 trust layer — the agent proves control of its own wallet by
+    signing an EIP-712 attestation client-side (see trust.py). Never sees
     the private key, only the resulting signature."""
     agent = agents_db.get(agent_id)
     if not agent:
