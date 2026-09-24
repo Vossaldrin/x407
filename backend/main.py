@@ -29,6 +29,7 @@ import llm
 import dex
 import ai_providers
 import trust
+import auth
 
 app = FastAPI(title="x407 API", version="0.3.0", docs_url="/docs")
 
@@ -243,8 +244,20 @@ class AgentCreate(BaseModel):
     color: str = "emerald"
     customRules: Optional[str] = None
 
-class VerifyIdentityRequest(BaseModel):
+class SignedAction(BaseModel):
+    """Proves the caller controls the agent's wallet (or ownerWallet) for one
+    specific action — see auth.py. Required on every agent-mutating route."""
     signature: str
+    nonce: str
+    timestamp: int
+
+class VerifyIdentityRequest(BaseModel):
+    signature: str  # the identity attestation itself (trust.py) — unchanged
+    auth: SignedAction  # proves this specific call is authorized (auth.py) — new
+
+class AgentPatchRequest(BaseModel):
+    patch: Dict[str, Any]
+    auth: SignedAction
 
 class HireRequest(BaseModel):
     templateId: str
@@ -427,29 +440,39 @@ def get_agent(agent_id: str):
     return safe(agents_db[agent_id])
 
 @app.patch("/agents/{agent_id}")
-def update_agent(agent_id: str, patch: dict):
+def update_agent(agent_id: str, body: AgentPatchRequest):
     if agent_id not in agents_db:
         raise HTTPException(404, "Agent not found")
+    agent = agents_db[agent_id]
+    auth.require_agent_signature(agent, "patch", body.auth.signature, body.auth.nonce, body.auth.timestamp)
+    patch = dict(body.patch)
     patch.pop("privateKey", None)
     patch.pop("fullAddr", None)
-    agents_db[agent_id].update(patch)
-    return safe(agents_db[agent_id])
+    agent.update(patch)
+    return safe(agent)
 
 @app.delete("/agents/{agent_id}")
-def revoke_agent(agent_id: str):
+def revoke_agent(agent_id: str, body: SignedAction):
     if agent_id not in agents_db:
         raise HTTPException(404, "Agent not found")
-    agents_db[agent_id]["status"] = "expired"
+    agent = agents_db[agent_id]
+    auth.require_agent_signature(agent, "delete", body.signature, body.nonce, body.timestamp)
+    agent["status"] = "expired"
     return {"ok": True, "id": agent_id, "status": "expired"}
 
 @app.post("/agents/{agent_id}/verify-identity")
 def verify_identity(agent_id: str, body: VerifyIdentityRequest):
     """x407 trust layer — the agent proves control of its own wallet by
     signing an EIP-712 attestation client-side (see trust.py). Never sees
-    the private key, only the resulting signature."""
+    the private key, only the resulting signature. body.auth separately
+    proves this specific call is authorized (see auth.py) — a captured
+    identity attestation alone can't be replayed to trigger this endpoint,
+    since that signature never expires by design (it's a durable identity
+    claim, not a one-time action)."""
     agent = agents_db.get(agent_id)
     if not agent:
         raise HTTPException(404, "Agent not found")
+    auth.require_agent_signature(agent, "verify-identity", body.auth.signature, body.auth.nonce, body.auth.timestamp)
     if not trust.verify_identity_signature(agent, body.signature):
         raise HTTPException(400, "Signature does not match this agent's wallet")
     agent["identityVerified"] = True

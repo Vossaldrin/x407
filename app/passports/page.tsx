@@ -4,6 +4,7 @@ import { useStore, Agent, accentColor } from '@/lib/store'
 import Link from 'next/link'
 import { Wallet, Pause, Trash2, Plus } from 'lucide-react'
 import { StaticFallback } from '@/components/agents/OrbFallback'
+import { signAgentAction } from '@/lib/agent-identity'
 
 const OrbIcon = dynamic(() => import('@/components/agents/OrbIcon'), {
   ssr: false,
@@ -26,8 +27,26 @@ function AgentTile({ agent }: { agent: Agent }) {
 
   const revoke = async () => {
     if (!confirm(`Revoke ${agent.name}?`)) return
-    await fetch(`${API}/agents/${agent.id}`, { method: 'DELETE' }).catch(() => {})
-    window.location.reload()
+    // Revoking now needs proof you control this agent's wallet — the same
+    // key you saved when it was created — not just its ID.
+    const privKey = prompt(`Enter ${agent.name}'s private key to confirm revoke:`)
+    if (!privKey) return
+    try {
+      const auth = await signAgentAction(privKey, agent.id, 'delete')
+      const res = await fetch(`${API}/agents/${agent.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(auth),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        alert(typeof body.detail === 'string' ? body.detail : 'Revoke failed — wrong key?')
+        return
+      }
+      window.location.reload()
+    } catch {
+      alert('Revoke failed — wrong key?')
+    }
   }
 
   return (
