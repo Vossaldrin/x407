@@ -358,6 +358,7 @@ def build_agent(body: AgentCreate, template_id: str = None) -> dict:
         "dailyLimit": body.dailyLimit,
         "perTxLimit": body.perTxLimit,
         "spentToday": 0.0,
+        "spentDate": datetime.utcnow().date().isoformat(),
         "balance": 0.0,
         "status": "active",
         "allowedActions": body.actions,

@@ -101,6 +101,11 @@ def check_limits(agent: dict, amount: float, blocked_cb=None):
     Raises HTTPException(402/400) on violation, calling blocked_cb(reason) first if given."""
     from datetime import datetime
 
+    today = datetime.utcnow().date().isoformat()
+    if agent.get("spentDate") != today:
+        agent["spentToday"] = 0.0
+        agent["spentDate"] = today
+
     if agent["status"] != "active":
         if blocked_cb: blocked_cb("agent_not_active")
         raise HTTPException(400, f"Agent is {agent['status']}")
