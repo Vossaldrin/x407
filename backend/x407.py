@@ -33,6 +33,24 @@ ERC20_ABI = [
 
 _w3 = Web3(Web3.HTTPProvider(BASE_RPC_URL))
 
+# In-memory set of consumed tx hashes (lowercased) — without this, a single real
+# on-chain payment could be replayed indefinitely against /demo/resource/* or
+# resubmitted to /payments/execute or /defi/execute to inflate txCount. Same
+# in-memory caveat as everything else in this app: resets on backend restart.
+_consumed_tx_hashes: set = set()
+
+
+def is_tx_consumed(tx_hash: str) -> bool:
+    return tx_hash.lower() in _consumed_tx_hashes
+
+
+def mark_tx_consumed(tx_hash: str):
+    _consumed_tx_hashes.add(tx_hash.lower())
+
+
+def current_block() -> int:
+    return _w3.eth.block_number
+
 # Demo "premium data source" catalog for the Research Agent — stand-ins for
 # real x402-payable APIs, all settled through the same real on-chain rail.
 DEMO_SOURCES = {
@@ -103,10 +121,15 @@ def check_limits(agent: dict, amount: float, blocked_cb=None):
         pass
 
 
-def verify_onchain_payment(tx_hash: str, expected_from: str, expected_to: str, expected_min_amount: float) -> dict:
+def verify_onchain_payment(tx_hash: str, expected_from: str, expected_to: str, expected_min_amount: float, not_before_block: int = None) -> dict:
     """Fetch a Base mainnet tx receipt and confirm it's a real USDC transfer matching the quote.
     Returns {"amount": float, "txHash": str} on success; raises HTTPException(402) with a
-    specific reason on any mismatch or failure — a bad/forged hash must never look like a payment."""
+    specific reason on any mismatch or failure — a bad/forged hash must never look like a payment.
+    Does not mark the hash consumed itself — callers do that once their whole payment flow
+    (not just this one check) has actually succeeded; see mark_tx_consumed."""
+    if is_tx_consumed(tx_hash):
+        raise HTTPException(402, "tx_already_used")
+
     try:
         receipt = _w3.eth.get_transaction_receipt(tx_hash)
     except Exception:
@@ -114,6 +137,9 @@ def verify_onchain_payment(tx_hash: str, expected_from: str, expected_to: str, e
 
     if receipt is None or receipt.status != 1:
         raise HTTPException(402, "transaction_failed_or_pending")
+
+    if not_before_block is not None and receipt.blockNumber < not_before_block:
+        raise HTTPException(402, "tx_predates_quote")
 
     usdc = _w3.eth.contract(address=Web3.to_checksum_address(USDC_BASE), abi=ERC20_ABI)
     transfer_topic = _w3.keccak(text="Transfer(address,address,uint256)").hex()

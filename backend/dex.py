@@ -93,16 +93,23 @@ def get_best_quote(from_token: str, to_token: str, amount_in: float) -> dict:
     }
 
 
-def verify_swap_onchain(tx_hash: str, expected_from: str, from_token: str, to_token: str, min_amount_in: float) -> dict:
+def verify_swap_onchain(tx_hash: str, expected_from: str, from_token: str, to_token: str, min_amount_in: float, not_before_block: int = None) -> dict:
     """Confirms a real swap tx: sent to the router by the agent, moving at least
     min_amount_in of from_token out of the agent's wallet. Mirrors
-    x407.verify_onchain_payment's strictness — never trust the client's own claim."""
+    x407.verify_onchain_payment's strictness — never trust the client's own claim.
+    Does not mark the hash consumed itself — see x407.mark_tx_consumed."""
+    if x407.is_tx_consumed(tx_hash):
+        raise HTTPException(402, "tx_already_used")
+
     try:
         receipt = _w3.eth.get_transaction_receipt(tx_hash)
     except Exception:
         raise HTTPException(402, "transaction_not_found")
     if receipt is None or receipt.status != 1:
         raise HTTPException(402, "transaction_failed_or_pending")
+
+    if not_before_block is not None and receipt.blockNumber < not_before_block:
+        raise HTTPException(402, "tx_predates_quote")
 
     tx = _w3.eth.get_transaction(tx_hash)
     if tx["to"] is None or Web3.to_checksum_address(tx["to"]) != SWAP_ROUTER02:

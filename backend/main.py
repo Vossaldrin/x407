@@ -533,6 +533,12 @@ async def _demo_resource_handler(source_id: str, request: Request):
 
     price = x407.DEMO_SOURCES[source_id]["price"]
     result = x407.verify_onchain_payment(tx_hash, payer or "", x407.DEMO_MERCHANT_ADDRESS, price)
+    # verify_onchain_payment only checks "at least price" — without this, a
+    # payment made for one (pricier) source could be replayed to unlock any
+    # other source whose price is <= what was actually sent.
+    if abs(result["amount"] - price) > 1e-6:
+        raise HTTPException(402, "amount_mismatch_for_source")
+    x407.mark_tx_consumed(tx_hash)
     return JSONResponse(status_code=200, content=x407.demo_unlock_response(source_id, result["amount"], result["txHash"]))
 
 @app.api_route("/demo/compute-api", methods=["GET", "POST"])
@@ -568,7 +574,7 @@ async def quote_payment(body: QuoteRequest):
     trust.check_trust(agent, amount)
     x407.check_limits(agent, amount)
 
-    _last_quote[body.agentId] = {"resourceUrl": resource_url, "accept": accept}
+    _last_quote[body.agentId] = {"resourceUrl": resource_url, "accept": accept, "quotedAtBlock": x407.current_block()}
     return {"agent": safe(agent), "quote": accept, "resourceUrl": resource_url}
 
 @app.post("/payments/execute")
@@ -599,7 +605,7 @@ async def execute_payment(body: ExecuteRequest):
     x407.check_limits(agent, amount, blocked_cb=blocked)
 
     try:
-        result = x407.verify_onchain_payment(body.txHash, agent["fullAddr"], accept["payTo"], amount)
+        result = x407.verify_onchain_payment(body.txHash, agent["fullAddr"], accept["payTo"], amount, not_before_block=quoted.get("quotedAtBlock"))
     except HTTPException as e:
         blocked(str(e.detail))
         raise
@@ -610,6 +616,7 @@ async def execute_payment(body: ExecuteRequest):
         blocked("resource_did_not_unlock")
         raise HTTPException(502, "Payment verified on-chain but resource did not unlock")
 
+    x407.mark_tx_consumed(body.txHash)
     agent["spentToday"] += result["amount"]
     agent["txCount"] += 1
     tx = {
@@ -639,7 +646,7 @@ def defi_quote(agentId: str, fromToken: str, toToken: str, amountIn: float):
     trust.check_trust(agent, notional)
     x407.check_limits(agent, notional)
 
-    _last_defi_quote[agentId] = {"fromToken": fromToken, "toToken": toToken, "amountIn": amountIn, "notional": notional}
+    _last_defi_quote[agentId] = {"fromToken": fromToken, "toToken": toToken, "amountIn": amountIn, "notional": notional, "quotedAtBlock": x407.current_block()}
     return {"agent": safe(agent), "quote": quote}
 
 @app.post("/defi/execute")
@@ -667,11 +674,12 @@ def defi_execute(body: DefiExecuteRequest):
     x407.check_limits(agent, quoted["notional"], blocked_cb=blocked)
 
     try:
-        result = dex.verify_swap_onchain(body.txHash, agent["fullAddr"], body.fromToken, body.toToken, quoted["amountIn"])
+        result = dex.verify_swap_onchain(body.txHash, agent["fullAddr"], body.fromToken, body.toToken, quoted["amountIn"], not_before_block=quoted.get("quotedAtBlock"))
     except HTTPException as e:
         blocked(str(e.detail))
         raise
 
+    x407.mark_tx_consumed(body.txHash)
     agent["spentToday"] += quoted["notional"]
     agent["txCount"] += 1
     tx = {
