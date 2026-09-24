@@ -22,7 +22,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from web3 import Web3
-import time, secrets, httpx
+import os, time, secrets, httpx
 import anthropic
 import x407
 import llm
@@ -33,10 +33,18 @@ import auth
 
 app = FastAPI(title="x407 API", version="0.3.0", docs_url="/docs")
 
+# Our own Vercel project only — "https://.*\.vercel\.app" previously matched
+# literally any Vercel-hosted app, not just ours. Override via env if the
+# project's preview-deployment naming ever changes. `or` rather than
+# os.getenv's own default arg — an empty string in the env (e.g. from a
+# blank line in .env) must also fall through, not become an empty regex
+# that (via re.match) would match every origin and be worse than no fix.
+CORS_ORIGIN_REGEX = os.getenv("CORS_ORIGIN_REGEX") or r"https://x407(-[a-z0-9-]+)?\.vercel\.app"
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origin_regex=CORS_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
