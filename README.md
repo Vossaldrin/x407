@@ -13,7 +13,7 @@ The name is a nod to `HTTP 407 Proxy Authentication Required` — in traditional
 ## ⚡ Why this beats a static API key
 
 - **Zero credit cards** — agents spin up a real wallet on deployment and fund their own dependencies directly.
-- **You set the rules** — daily spend limits, per-transaction caps, allowed actions, and expiry, enforced server-side before anything executes.
+- **You set the rules** — daily spend limits, per-transaction caps, allowed actions, and expiry; every payment is checked against them before the app will settle it. (The agent's own key can still sign a transfer directly on-chain, bypassing the app entirely, until `SpendGuardModule` is deployed — see the contracts status below.)
 - **Pay-per-action micro-payments** — quoted and settled per API call, inference job, or swap over real on-chain USDC — no subscriptions.
 - **Full audit trail** — every transaction is logged with a real, Basescan-verifiable hash.
 - **Granular escrow** — `TaskEscrow.sol`: programmable conditional payouts for multi-step tasks. Built and tested (Foundry, Base Sepolia target); not yet deployed to any network. The live app's default flow is still direct quote-and-pay, not escrow.

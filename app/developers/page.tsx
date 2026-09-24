@@ -33,9 +33,9 @@ export default function DevelopersPage() {
         </h1>
         <p style={{ fontSize: 14, color: 'var(--ink3)', lineHeight: 1.6 }}>
           x407 isn't only BotMart's backend — it's a plain HTTP API for giving any autonomous
-          agent a real on-chain identity, a non-custodial wallet, and a spend policy it can't
-          exceed. If your agent needs to pay for something on its own, this is the whole
-          integration surface.
+          agent a real on-chain identity, a non-custodial wallet, and a spend policy every
+          payment is checked against. If your agent needs to pay for something on its own,
+          this is the whole integration surface.
         </p>
       </div>
 
