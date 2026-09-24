@@ -44,6 +44,14 @@ export async function payWithAgentWallet(
   }
 }
 
+/** Generates a fresh Ethereum wallet entirely client-side. The backend only
+ * ever receives the resulting address — never the key — so it genuinely
+ * never sees it, not even transiently in a request/response cycle. */
+export function generateAgentWallet(): { address: string; privateKey: string } {
+  const wallet = ethers.Wallet.createRandom()
+  return { address: wallet.address, privateKey: wallet.privateKey }
+}
+
 export function agentAddressFromKey(privateKeyHex: string): string | null {
   try {
     return new ethers.Wallet(privateKeyHex).address

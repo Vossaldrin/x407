@@ -1,5 +1,6 @@
 'use client'
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
+import { generateAgentWallet } from './x407-agent-pay'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -211,34 +212,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const updateAgent = useCallback((id: string, patch: Partial<Agent>) =>
     setAgents(p => p.map(a => a.id === id ? { ...a, ...patch } : a)), [])
 
+  // Wallet is generated here, client-side, for both hireAgent and createAgent —
+  // the backend only ever receives the resulting address. It never sees, and
+  // never briefly holds, the private key at any point in the request cycle.
   const hireAgent = useCallback(async (
     templateId: string, chain: string, expiry: string,
     overrides?: { dailyLimit?: number; perTxLimit?: number; actions?: string[] }
   ) => {
     try {
+      const wallet = generateAgentWallet()
       const res = await fetch(`${API}/marketplace/hire`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ templateId, chain, expiry, ...overrides }),
+        body: JSON.stringify({ templateId, chain, expiry, address: wallet.address, ...overrides }),
       })
       if (!res.ok) return null
       const data = await res.json()
       addAgent(data.agent)
-      return data
+      return { agent: data.agent, privateKey: wallet.privateKey }
     } catch { return null }
   }, [addAgent])
 
   const createAgent = useCallback(async (body: object) => {
     try {
+      const wallet = generateAgentWallet()
       const res = await fetch(`${API}/agents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ ...body, address: wallet.address }),
       })
       if (!res.ok) return null
       const data = await res.json()
       addAgent(data.agent)
-      return data
+      return { agent: data.agent, privateKey: wallet.privateKey }
     } catch { return null }
   }, [addAgent])
 

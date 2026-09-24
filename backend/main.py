@@ -21,7 +21,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from eth_account import Account
+from web3 import Web3
 import time, secrets, httpx
 import anthropic
 import x407
@@ -232,6 +232,8 @@ MARKETPLACE = [
 # ── Models ────────────────────────────────────────────────────────────────────
 class AgentCreate(BaseModel):
     name: str
+    address: str  # generated client-side (ethers.Wallet.createRandom()) — the
+                  # backend never generates or sees the private key
     chain: str = "Base"
     dailyLimit: float = 500.0
     perTxLimit: float = 50.0
@@ -246,6 +248,7 @@ class VerifyIdentityRequest(BaseModel):
 
 class HireRequest(BaseModel):
     templateId: str
+    address: str  # generated client-side — see AgentCreate.address
     chain: str = "Base"
     dailyLimit: Optional[float] = None
     perTxLimit: Optional[float] = None
@@ -327,15 +330,17 @@ def short_addr(addr: str) -> str:
     return addr[:6] + "…" + addr[-4:]
 
 def build_agent(body: AgentCreate, template_id: str = None) -> dict:
-    acct = Account.create()
+    try:
+        full_addr = Web3.to_checksum_address(body.address)
+    except ValueError:
+        raise HTTPException(400, "Invalid Ethereum address")
     agent_id = f"ag_{int(time.time() * 1000)}_{secrets.token_hex(3)}"
     initials = "".join(w[0] for w in body.name.split() if w)[:2].upper()
     return {
         "id": agent_id,
         "name": body.name,
-        "shortAddr": short_addr(acct.address),
-        "fullAddr": acct.address,
-        "privateKey": acct.key.hex(),
+        "shortAddr": short_addr(full_addr),
+        "fullAddr": full_addr,
         "chain": body.chain,
         "dailyLimit": body.dailyLimit,
         "perTxLimit": body.perTxLimit,
@@ -388,6 +393,7 @@ def hire_agent(body: HireRequest):
 
     agent_body = AgentCreate(
         name=tpl["name"],
+        address=body.address,
         chain=body.chain,
         dailyLimit=body.dailyLimit or tpl["defaultDailyLimit"],
         perTxLimit=body.perTxLimit or tpl["defaultPerTxLimit"],
@@ -399,14 +405,9 @@ def hire_agent(body: HireRequest):
     agent = build_agent(agent_body, template_id=body.templateId)
     agent["emoji"] = tpl.get("emoji", "🤖")
     agent["category"] = tpl["category"]
-    private_key = agent.pop("privateKey")
     agents_db[agent["id"]] = agent
 
-    return {
-        "agent": safe(agent),
-        "privateKey": private_key,
-        "warning": "Save your private key now — it will never be shown again.",
-    }
+    return {"agent": safe(agent)}
 
 # ── Agents ────────────────────────────────────────────────────────────────────
 @app.get("/agents")
@@ -416,10 +417,8 @@ def list_agents():
 @app.post("/agents", status_code=201)
 def create_agent(body: AgentCreate):
     agent = build_agent(body)
-    private_key = agent.pop("privateKey")
     agents_db[agent["id"]] = agent
-    return {"agent": safe(agent), "privateKey": private_key,
-            "warning": "Save your private key now — it will never be shown again."}
+    return {"agent": safe(agent)}
 
 @app.get("/agents/{agent_id}")
 def get_agent(agent_id: str):
