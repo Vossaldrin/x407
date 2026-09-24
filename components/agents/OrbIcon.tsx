@@ -38,7 +38,7 @@ export default function OrbIcon({ color }: { color: string }) {
     pointLight.position.set(2, 2, 2)
     scene.add(pointLight)
 
-    const geometry = new THREE.IcosahedronGeometry(1, 1)
+    const geometry = new THREE.IcosahedronGeometry(1, 2)
     const material = new THREE.MeshStandardMaterial({
       color, emissive: color, emissiveIntensity: 0.6, roughness: 0.3, metalness: 0.1,
     })

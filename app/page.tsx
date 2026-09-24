@@ -6,6 +6,8 @@ import { useReveal } from '@/lib/use-reveal'
 import { useCountUp } from '@/lib/use-count-up'
 import { X407Mark } from '@/components/brand/X407Mark'
 import { Lock, Zap, BarChart3, ArrowRight, ChevronRight, Star, Wallet, ShieldCheck, Globe, Check, X, ChevronDown } from 'lucide-react'
+import { SiEthereum, SiAnthropic, SiCircle } from 'react-icons/si'
+import type { IconType } from 'react-icons'
 
 const FEATURES = [
   { icon: <Wallet size={17} />, title: <>Zero credit cards<span className="feature-badge feature-badge-live">Live</span></>, desc: 'Every agent spins up its own crypto wallet on deployment — it funds its own API dependencies directly, no human card on file.' },
@@ -30,7 +32,16 @@ const COMPARISON = [
   { without: 'Revoke access by hunting down every place a key was shared', withX: 'One-click revoke — the wallet was always scoped to just this agent' },
 ]
 
-const BUILT_ON = ['Base', 'Uniswap V3', 'Anthropic Claude', 'USDC', 'Ethereum']
+// Real brand marks where Simple Icons actually has one — Base and Uniswap
+// don't, and a hand-drawn approximation of a trademarked logo would look
+// worse than no icon at all, so those two stay clean text.
+const BUILT_ON: { name: string; icon?: IconType }[] = [
+  { name: 'Base' },
+  { name: 'Uniswap V3' },
+  { name: 'Anthropic Claude', icon: SiAnthropic },
+  { name: 'USDC', icon: SiCircle },
+  { name: 'Ethereum', icon: SiEthereum },
+]
 
 const FAQ = [
   { q: 'Is this live on mainnet, or a demo?', a: 'Wallet generation, USDC payments, and Uniswap V3 swaps are real and execute on Base mainnet today — no mocked balances. The on-chain contracts (TaskEscrow, AgentRegistry, PaymentStream, SpendGuard) are built and tested but not yet deployed anywhere public. We’d rather say that plainly than have you find out from Basescan.' },
@@ -248,7 +259,12 @@ function BuiltOnRow() {
     <div ref={ref} className={`built-on reveal ${visible ? 'in-view' : ''}`}>
       <span className="built-on-label">Built on</span>
       <div className="built-on-row">
-        {BUILT_ON.map(name => <span key={name} className="built-on-item">{name}</span>)}
+        {BUILT_ON.map(({ name, icon: Icon }) => (
+          <span key={name} className="built-on-item">
+            {Icon && <Icon size={15} />}
+            {name}
+          </span>
+        ))}
       </div>
     </div>
   )

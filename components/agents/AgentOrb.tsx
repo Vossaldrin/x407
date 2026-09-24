@@ -49,7 +49,7 @@ export default function AgentOrb({ color, status }: { color: string; status: Age
     pointLight.position.set(2, 2, 2)
     scene.add(pointLight)
 
-    const geometry = new THREE.IcosahedronGeometry(1, 4)
+    const geometry = new THREE.IcosahedronGeometry(1, 5)
     const basePositions = geometry.attributes.position.array.slice()
     const material = new THREE.MeshStandardMaterial({
       color,
