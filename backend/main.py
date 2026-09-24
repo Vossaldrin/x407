@@ -503,7 +503,7 @@ def make_payment(body: PaymentRequest):
 
 def _blocked(agent, body, reason):
     transactions_db.insert(0, {
-        "id": f"tx_{int(time.time()*1000)}",
+        "id": f"tx_{int(time.time()*1000)}_{secrets.token_hex(3)}",
         "name": body.description,
         "agentId": body.agentId,
         "agentName": agent["name"],
@@ -519,7 +519,7 @@ def _blocked(agent, body, reason):
 
 def _record(agent, body, status):
     tx = {
-        "id": f"tx_{int(time.time()*1000)}",
+        "id": f"tx_{int(time.time()*1000)}_{secrets.token_hex(3)}",
         "name": body.description,
         "agentId": body.agentId,
         "agentName": agent["name"],
@@ -624,7 +624,7 @@ async def execute_payment(body: ExecuteRequest):
 
     def blocked(reason):
         transactions_db.insert(0, {
-            "id": f"tx_{int(time.time()*1000)}",
+            "id": f"tx_{int(time.time()*1000)}_{secrets.token_hex(3)}",
             "name": accept.get("description", "x407 payment"),
             "agentId": body.agentId, "agentName": agent["name"],
             "type": "out", "amount": amount, "chain": "Base",
@@ -653,7 +653,7 @@ async def execute_payment(body: ExecuteRequest):
     agent["spentToday"] += result["amount"]
     agent["txCount"] += 1
     tx = {
-        "id": f"tx_{int(time.time()*1000)}",
+        "id": f"tx_{int(time.time()*1000)}_{secrets.token_hex(3)}",
         "name": accept.get("description", "x407 payment"),
         "agentId": body.agentId, "agentName": agent["name"],
         "type": "out", "amount": result["amount"], "chain": "Base",
@@ -694,7 +694,7 @@ def defi_execute(body: DefiExecuteRequest):
 
     def blocked(reason):
         transactions_db.insert(0, {
-            "id": f"tx_{int(time.time()*1000)}",
+            "id": f"tx_{int(time.time()*1000)}_{secrets.token_hex(3)}",
             "name": f"Swap {body.fromToken} -> {body.toToken}",
             "agentId": body.agentId, "agentName": agent["name"],
             "type": "out", "amount": quoted["notional"], "chain": "Base",
@@ -716,7 +716,7 @@ def defi_execute(body: DefiExecuteRequest):
     agent["spentToday"] += quoted["notional"]
     agent["txCount"] += 1
     tx = {
-        "id": f"tx_{int(time.time()*1000)}",
+        "id": f"tx_{int(time.time()*1000)}_{secrets.token_hex(3)}",
         "name": f"Swap {body.fromToken} -> {body.toToken}",
         "agentId": body.agentId, "agentName": agent["name"],
         "type": "out", "amount": quoted["notional"], "chain": "Base",

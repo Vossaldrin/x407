@@ -6,8 +6,7 @@ name for this rail, not a different wire protocol.
 Agents never hand their private key to this backend. The browser signs and
 broadcasts a plain ERC-20 transfer directly with the agent's own key; this
 module only *verifies* the resulting on-chain transaction and enforces the
-agent's spending rules. See /Users/alvinaokeowo/.claude/plans for the
-rationale (no facilitator, no server-held custody).
+agent's spending rules (no facilitator, no server-held custody).
 """
 import os
 import socket
