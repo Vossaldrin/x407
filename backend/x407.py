@@ -10,6 +10,9 @@ agent's spending rules. See /Users/alvinaokeowo/.claude/plans for the
 rationale (no facilitator, no server-held custody).
 """
 import os
+import socket
+import ipaddress
+from urllib.parse import urlparse
 from web3 import Web3
 from fastapi import HTTPException
 
@@ -20,6 +23,33 @@ USDC_DECIMALS = 6
 BASE_RPC_URL = os.getenv("BASE_RPC_URL", "https://mainnet.base.org")
 DEMO_MERCHANT_ADDRESS = os.getenv("DEMO_MERCHANT_ADDRESS", "")
 SELF_API_URL = os.getenv("SELF_API_URL", "http://localhost:8000")
+
+
+def validate_resource_url(url: str):
+    """Reject anything that isn't a plain https URL to a public host, except
+    our own SELF_API_URL (the demo flow's default, may be plain http on
+    localhost in dev). Without this, a caller-supplied resourceUrl to
+    /payments/quote (and the same URL re-fetched by /payments/execute) would
+    let the backend be used to probe internal services or cloud-metadata
+    endpoints (SSRF) — resourceUrl is otherwise entirely attacker-controlled."""
+    if url == SELF_API_URL or url.startswith(SELF_API_URL + "/"):
+        return
+
+    parsed = urlparse(url)
+    if parsed.scheme != "https":
+        raise HTTPException(400, "resource_url_must_be_https")
+    if not parsed.hostname:
+        raise HTTPException(400, "invalid_resource_url")
+
+    try:
+        addrs = socket.getaddrinfo(parsed.hostname, None)
+    except socket.gaierror:
+        raise HTTPException(400, "resource_host_not_resolvable")
+
+    for family, _, _, _, sockaddr in addrs:
+        ip = ipaddress.ip_address(sockaddr[0])
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+            raise HTTPException(400, "resource_host_not_allowed")
 
 ERC20_ABI = [
     {"constant": True, "inputs": [], "name": "decimals", "outputs": [{"name": "", "type": "uint8"}], "type": "function"},

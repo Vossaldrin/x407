@@ -579,9 +579,10 @@ async def quote_payment(body: QuoteRequest):
         raise HTTPException(404, "Agent not found")
 
     resource_url = body.resourceUrl or f"{x407.SELF_API_URL}/demo/compute-api"
+    x407.validate_resource_url(resource_url)
     async with httpx.AsyncClient() as client:
         try:
-            res = await client.get(resource_url, timeout=10)
+            res = await client.get(resource_url, timeout=10, follow_redirects=False)
         except httpx.HTTPError as e:
             raise HTTPException(502, f"Could not reach resource: {e}")
 
@@ -633,8 +634,9 @@ async def execute_payment(body: ExecuteRequest):
         blocked(str(e.detail))
         raise
 
+    x407.validate_resource_url(quoted["resourceUrl"])
     async with httpx.AsyncClient() as client:
-        unlocked = await client.get(quoted["resourceUrl"], params={"txHash": body.txHash, "payer": agent["fullAddr"]}, timeout=15)
+        unlocked = await client.get(quoted["resourceUrl"], params={"txHash": body.txHash, "payer": agent["fullAddr"]}, timeout=15, follow_redirects=False)
     if unlocked.status_code != 200:
         blocked("resource_did_not_unlock")
         raise HTTPException(502, "Payment verified on-chain but resource did not unlock")
