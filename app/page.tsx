@@ -350,7 +350,9 @@ export default function LandingPage() {
           <p className="hero-subtitle">
             x407 gives each AI agent its own USDC wallet on Base. It pays for APIs, data, and
             swaps per request over HTTP 402, and every payment is checked against the daily
-            cap, per-transaction limit, and expiry you set.
+            cap, per-transaction limit, and expiry you set. Spend over $10 and it has to prove
+            it controls that wallet first — a real EIP-712 signature check, the actual 407 in
+            x407 — before the payment goes through.
           </p>
           <div className="hero-ctas">
             <Link href="/marketplace" className="btn-primary-lg">Hire an agent on BotMart <ArrowRight size={15} /></Link>
