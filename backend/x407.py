@@ -14,6 +14,7 @@ import ipaddress
 from urllib.parse import urlparse
 from web3 import Web3
 from fastapi import HTTPException
+import research_sources
 
 # Native USDC on Base mainnet (Circle-issued FiatTokenProxy), 6 decimals.
 USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
@@ -45,7 +46,7 @@ def validate_resource_url(url: str):
     except socket.gaierror:
         raise HTTPException(400, "resource_host_not_resolvable")
 
-    for family, _, _, _, sockaddr in addrs:
+    for _family, _, _, _, sockaddr in addrs:
         ip = ipaddress.ip_address(sockaddr[0])
         if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
             raise HTTPException(400, "resource_host_not_allowed")
@@ -108,17 +109,21 @@ def demo_quote_response(source_id: str) -> dict:
     }
 
 
-def demo_unlock_response(source_id: str, paid_amount: float, tx_hash: str) -> dict:
-    """The 200 body once payment is verified — a small fake payload per source."""
+async def demo_unlock_response(source_id: str, paid_amount: float, tx_hash: str, topic: str = "") -> dict:
+    """The 200 body once payment is verified. market-data/web-search/analytics call
+    real APIs (research_sources.py) using the caller's topic; compute-api stays a
+    demo concept — there's no real "buy one inference job" API to wire it to."""
     source = DEMO_SOURCES[source_id]
-    fake_payloads = {
-        "compute-api": {"job": "inference-demo", "output": "42", "computeMs": 812},
-        "market-data": {"symbol": "ETH/USD", "price": 3372.18, "change24h": 1.4},
-        "web-search":  {"snippet": "Base TVL crossed $4.1B this week, driven by renewed DeFi activity."},
-        "analytics":   {"summary": "Weekly active wallets on Base up 12% week-over-week."},
-    }
+    if source_id == "market-data":
+        result = await research_sources.market_data(topic)
+    elif source_id == "analytics":
+        result = await research_sources.analytics(topic)
+    elif source_id == "web-search":
+        result = await research_sources.web_search(topic)
+    else:
+        result = {"job": "inference-demo", "output": "42", "computeMs": 812}
     return {
-        "result": fake_payloads[source_id],
+        "result": result,
         "source": source["name"],
         "paidAmount": paid_amount,
         "txHash": tx_hash,

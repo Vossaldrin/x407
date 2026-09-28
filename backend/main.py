@@ -53,6 +53,7 @@ app.add_middleware(
 # ── In-memory stores ──────────────────────────────────────────────────────────
 agents_db: dict = {}
 transactions_db: list = []
+bills_db: dict = {}  # {bill_id: {..., agentId}} — user-entered real bills for Budget Guard
 
 # ── Marketplace catalogue ─────────────────────────────────────────────────────
 MARKETPLACE = [
@@ -283,6 +284,14 @@ class PaymentRequest(BaseModel):
     amount: float
     description: str
     chain: str = "Base"
+
+class BillCreate(BaseModel):
+    name: str
+    category: str = "Other"
+    amount: float
+    payToAddress: str  # there's no real Netflix/Spotify billing API to reach — the
+                        # user names their own real recipient, which is what makes
+                        # the resulting payment genuinely real
 
 class QuoteRequest(BaseModel):
     agentId: str
@@ -558,6 +567,7 @@ async def _demo_resource_handler(source_id: str, request: Request):
 
     tx_hash = request.query_params.get("txHash") or request.headers.get("X-PAYMENT-TX")
     payer = request.query_params.get("payer") or request.headers.get("X-PAYMENT-FROM")
+    topic = request.query_params.get("topic", "")
 
     if not tx_hash:
         return JSONResponse(status_code=402, content=x407.demo_quote_response(source_id))
@@ -570,7 +580,8 @@ async def _demo_resource_handler(source_id: str, request: Request):
     if abs(result["amount"] - price) > 1e-6:
         raise HTTPException(402, "amount_mismatch_for_source")
     x407.mark_tx_consumed(tx_hash)
-    return JSONResponse(status_code=200, content=x407.demo_unlock_response(source_id, result["amount"], result["txHash"]))
+    unlock = await x407.demo_unlock_response(source_id, result["amount"], result["txHash"], topic)
+    return JSONResponse(status_code=200, content=unlock)
 
 @app.api_route("/demo/compute-api", methods=["GET", "POST"])
 async def demo_compute_api(request: Request):
@@ -579,6 +590,88 @@ async def demo_compute_api(request: Request):
 @app.api_route("/demo/resource/{source_id}", methods=["GET", "POST"])
 async def demo_resource(source_id: str, request: Request):
     return await _demo_resource_handler(source_id, request)
+
+# ── Bills (Budget Guard — real user-entered bills, real payment rail) ──────────
+# No bank/subscription auto-detection (out of reasonable scope) — the user names
+# their own real recipient per bill, which is what makes the resulting payment
+# genuinely real even though "auto-detect my subscriptions" isn't. Bill CRUD
+# itself carries no spend authority (creating/listing/deleting one moves no
+# money), so it doesn't need the signed-action auth that agent PATCH/DELETE do —
+# actual money only moves through the same trust/limit/replay-protected rail
+# below, same as everything else.
+
+def _bill_invoice_quote(bill: dict) -> dict:
+    """Same x402 challenge shape as x407.demo_quote_response, sourced from a
+    user-entered bill instead of the fixed DEMO_SOURCES catalog."""
+    return {
+        "x402Version": 1,
+        "accepts": [{
+            "scheme": "exact",
+            "network": "base",
+            "amount": str(bill["amount"]),
+            "asset": x407.USDC_BASE,
+            "payTo": bill["payToAddress"],
+            "resource": f"/bills/{bill['id']}/invoice",
+            "description": f"{bill['name']} ({bill['category']})",
+            "maxTimeoutSeconds": 300,
+        }],
+    }
+
+@app.post("/agents/{agent_id}/bills", status_code=201)
+def create_bill(agent_id: str, body: BillCreate):
+    if agent_id not in agents_db:
+        raise HTTPException(404, "Agent not found")
+    try:
+        pay_to = Web3.to_checksum_address(body.payToAddress)
+    except ValueError:
+        raise HTTPException(400, "Invalid payToAddress")
+    bill_id = f"bill_{int(time.time()*1000)}_{secrets.token_hex(3)}"
+    bill = {
+        "id": bill_id, "agentId": agent_id, "name": body.name,
+        "category": body.category, "amount": body.amount,
+        "payToAddress": pay_to, "paid": False,
+    }
+    bills_db[bill_id] = bill
+    return bill
+
+@app.get("/agents/{agent_id}/bills")
+def list_bills(agent_id: str):
+    return {"bills": [b for b in bills_db.values() if b["agentId"] == agent_id]}
+
+@app.delete("/agents/{agent_id}/bills/{bill_id}")
+def delete_bill(agent_id: str, bill_id: str):
+    bill = bills_db.get(bill_id)
+    if not bill or bill["agentId"] != agent_id:
+        raise HTTPException(404, "Bill not found")
+    del bills_db[bill_id]
+    return {"ok": True}
+
+@app.api_route("/bills/{bill_id}/invoice", methods=["GET", "POST"])
+async def bill_invoice(bill_id: str, request: Request):
+    """Same shared x407-style merchant behavior as _demo_resource_handler,
+    sourced from a user-entered bill instead of the fixed demo catalog — reuses
+    the exact same replay/block-binding protections since it's the same
+    /payments/quote + /payments/execute rail underneath, just a different
+    resourceUrl."""
+    bill = bills_db.get(bill_id)
+    if not bill:
+        raise HTTPException(404, f"Unknown bill '{bill_id}'")
+
+    tx_hash = request.query_params.get("txHash") or request.headers.get("X-PAYMENT-TX")
+    payer = request.query_params.get("payer") or request.headers.get("X-PAYMENT-FROM")
+
+    if not tx_hash:
+        return JSONResponse(status_code=402, content=_bill_invoice_quote(bill))
+
+    result = x407.verify_onchain_payment(tx_hash, payer or "", bill["payToAddress"], bill["amount"])
+    if abs(result["amount"] - bill["amount"]) > 1e-6:
+        raise HTTPException(402, "amount_mismatch_for_bill")
+    x407.mark_tx_consumed(tx_hash)
+    bill["paid"] = True
+    return JSONResponse(status_code=200, content={
+        "result": {"billId": bill_id, "name": bill["name"], "status": "paid"},
+        "source": bill["name"], "paidAmount": result["amount"], "txHash": result["txHash"],
+    })
 
 @app.post("/payments/quote")
 async def quote_payment(body: QuoteRequest):
@@ -850,15 +943,16 @@ TOOL_BY_FLOW: Dict[str, Dict[str, Any]] = {
         },
     },
     "finance": {
-        "name": "propose_bill_action",
-        "description": "Propose paying a bill or switching to a cheaper deal.",
+        "name": "propose_bill",
+        "description": "Propose adding a bill for the user to review, confirm, and pay in real USDC.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "billName": {"type": "string"},
-                "action": {"type": "string", "enum": ["pay", "switch"]},
+                "amount": {"type": "number", "description": "Amount in USDC, if the user mentioned one"},
+                "payToAddress": {"type": "string", "description": "Recipient wallet address, if the user provided one"},
             },
-            "required": ["billName", "action"],
+            "required": ["billName"],
         },
     },
     "travel": {

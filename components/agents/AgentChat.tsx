@@ -8,7 +8,7 @@ function describeProposal(action: ProposedAction): string {
   switch (action.type) {
     case 'research': return `Research "${p.topic}" using ${(p.sourceIds || []).join(', ') || 'selected sources'}`
     case 'defi': return `Swap ${p.amountIn} ${p.fromToken} → ${p.fromToken === 'ETH' ? 'USDC' : 'ETH'}`
-    case 'finance': return `${p.action === 'switch' ? 'Switch deal for' : 'Pay'} ${p.billName}`
+    case 'finance': return `Add bill: ${p.billName}${p.amount ? ` ($${p.amount})` : ''}`
     case 'travel': return `Search travel to ${p.destination}${p.maxBudget ? ` under $${p.maxBudget}` : ''}`
     case 'api': return `Pay for API${p.resourceUrl ? `: ${p.resourceUrl}` : ' (demo compute)'}`
     default: return 'Proposed action'

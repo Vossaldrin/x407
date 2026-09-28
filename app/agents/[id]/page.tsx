@@ -107,7 +107,8 @@ export default function AgentDetailPage() {
       {flow === 'finance' && (
         <FinanceFlow agent={agent} key={chatProposal ? JSON.stringify(chatProposal) : 'finance'}
           initialBillName={chatProposal?.type === 'finance' ? chatProposal.params.billName : undefined}
-          initialAction={chatProposal?.type === 'finance' ? chatProposal.params.action : undefined} />
+          initialAmount={chatProposal?.type === 'finance' ? chatProposal.params.amount : undefined}
+          initialPayToAddress={chatProposal?.type === 'finance' ? chatProposal.params.payToAddress : undefined} />
       )}
       {flow === 'travel' && (
         <TravelFlow agent={agent} key={chatProposal ? JSON.stringify(chatProposal) : 'travel'}

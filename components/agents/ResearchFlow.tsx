@@ -85,7 +85,10 @@ export function ResearchFlow({ agent, initialTopic, initialSourceIds }: {
     for (const sourceId of selected) {
       const source = sources.find(s => s.id === sourceId)!
       setProgress(`Quoting ${source.name}…`)
-      const resourceUrl = `${API}/demo/resource/${sourceId}`
+      // topic threads through to the real data source (backend/research_sources.py)
+      // once payment unlocks it — same resourceUrl at quote and execute time, since
+      // /payments/execute re-checks against the exact URL it was quoted against.
+      const resourceUrl = `${API}/demo/resource/${sourceId}?topic=${encodeURIComponent(topic)}`
       const quoteResult = await quotePayment(agent.id, resourceUrl)
       if (quoteResult && 'trustChallenge' in quoteResult) {
         setPrivKey('')
