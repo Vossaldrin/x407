@@ -1,13 +1,21 @@
 'use client'
 import { Fragment, useEffect, useRef, useState, MouseEvent } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { useStore } from '@/lib/store'
 import { useReveal } from '@/lib/use-reveal'
+import { useScrollProgress } from '@/lib/use-scroll-progress'
 import { useCountUp } from '@/lib/use-count-up'
 import { X407Mark } from '@/components/brand/X407Mark'
+import { StaticFallback } from '@/components/agents/OrbFallback'
 import { Lock, Zap, BarChart3, ArrowRight, ChevronRight, Star, Wallet, ShieldCheck, Globe, Check, X, ChevronDown } from 'lucide-react'
 import { SiEthereum, SiAnthropic, SiCircle } from 'react-icons/si'
 import type { IconType } from 'react-icons'
+
+const CoreOrb = dynamic(() => import('@/components/brand/CoreOrb'), {
+  ssr: false,
+  loading: () => <StaticFallback color="var(--neon)" />,
+})
 
 const FEATURES = [
   { icon: <Wallet size={17} />, title: <>Zero credit cards<span className="feature-badge feature-badge-live">Live</span></>, desc: 'Every agent spins up its own crypto wallet on deployment — it funds its own API dependencies directly, no human card on file.' },
@@ -178,6 +186,16 @@ function FeaturesSection() {
   )
 }
 
+function CompareRow({ without, withX }: { without: string; withX: string }) {
+  const { ref, visible } = useReveal<HTMLDivElement>()
+  return (
+    <Fragment>
+      <div ref={ref} className={`compare-cell compare-without reveal ${visible ? 'in-view' : ''}`}><X size={14} /><span>{without}</span></div>
+      <div className={`compare-cell compare-with reveal ${visible ? 'in-view' : ''}`}><Check size={14} /><span>{withX}</span></div>
+    </Fragment>
+  )
+}
+
 function ComparisonSection() {
   const { ref, visible } = useReveal<HTMLDivElement>()
   return (
@@ -188,12 +206,7 @@ function ComparisonSection() {
       <div className="compare-table">
         <div className="compare-head compare-without">Without x407</div>
         <div className="compare-head compare-with">With x407</div>
-        {COMPARISON.map((row, i) => (
-          <Fragment key={i}>
-            <div className="compare-cell compare-without"><X size={14} /><span>{row.without}</span></div>
-            <div className="compare-cell compare-with"><Check size={14} /><span>{row.withX}</span></div>
-          </Fragment>
-        ))}
+        {COMPARISON.map((row, i) => <CompareRow key={i} without={row.without} withX={row.withX} />)}
       </div>
     </div>
   )
@@ -201,14 +214,18 @@ function ComparisonSection() {
 
 function StepsSection() {
   const { ref, visible } = useReveal<HTMLDivElement>()
+  const { ref: progressRef, progress } = useScrollProgress<HTMLDivElement>()
   return (
     <div ref={ref} className={`landing-section reveal ${visible ? 'in-view' : ''}`} style={{ paddingTop: 0 }}>
       <div className="landing-section-head" style={{ textAlign: 'left', margin: '0 0 24px' }}>
         <h2>From zero to deployed<br />in three steps.</h2>
       </div>
-      <div className="landing-steps">
-        {STEPS.map(step => (
-          <div key={step.n} className="landing-step">
+      <div ref={progressRef} className="landing-steps">
+        <div className="landing-steps-line">
+          <div className="landing-steps-line-fill" style={{ height: `${progress * 100}%` }} />
+        </div>
+        {STEPS.map((step, i) => (
+          <div key={step.n} className={`landing-step ${progress > i / STEPS.length ? 'is-active' : ''}`}>
             <div className="landing-step-num">{step.n}</div>
             <div style={{ flex: 1 }}>
               <div className="landing-step-title">{step.title}</div>
@@ -326,6 +343,8 @@ export default function LandingPage() {
         <div className="hero-glow-follow" />
         <div className="hero-gradient" />
         <div className="hero-content">
+          {/* Literal hex, not var(--neon) — THREE.Color can't resolve CSS custom properties. */}
+          <div className="hero-core"><CoreOrb color="#39FF88" /></div>
           <div className="hero-eyebrow">HTTP 402 + 407 · USDC on Base · your keys, your limits</div>
           <h1 className="hero-title">Give your agent a wallet. Keep the limits.</h1>
           <p className="hero-subtitle">

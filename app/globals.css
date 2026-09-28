@@ -372,6 +372,12 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
 @keyframes cardIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes pulse { 0%, 100% { opacity: 0.6; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
 
+.x407-mark-glow { animation: markGlowPulse 3s ease-in-out infinite; }
+@keyframes markGlowPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(57,255,136,0); }
+  50% { box-shadow: 0 0 16px rgba(57,255,136,0.55); }
+}
+
 .animate-up { animation: fadeUp 0.35s cubic-bezier(.4,0,.2,1) forwards; }
 
 .stagger > * { opacity: 0; animation: cardIn 0.5s cubic-bezier(.4,0,.2,1) forwards; }
@@ -457,6 +463,7 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
   position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 0%), rgba(57,255,136,0.14), transparent 70%);
 }
+.hero-core { width: 300px; height: 300px; margin: 0 auto 12px; }
 .hero-eyebrow {
   font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--neon); margin-bottom: 18px;
@@ -564,7 +571,9 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
 }
 @keyframes blink { 50% { opacity: 0; } }
 
-.landing-steps { display: flex; flex-direction: column; }
+.landing-steps { display: flex; flex-direction: column; position: relative; padding-left: 22px; }
+.landing-steps-line { position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px; background: var(--line); border-radius: 1px; }
+.landing-steps-line-fill { width: 100%; background: var(--neon); border-radius: 1px; box-shadow: 0 0 8px var(--neon); }
 .landing-step {
   display: flex; align-items: flex-start; gap: 32px; padding: 44px 20px; margin: 0 -20px;
   border-bottom: 1px solid var(--line); border-radius: 16px;
@@ -573,7 +582,7 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
 .landing-step:last-child { border-bottom: none; }
 .landing-step:hover { background: var(--card2); }
 .landing-step-num { font-family: var(--mono); font-size: 40px; font-weight: 700; color: var(--line2); letter-spacing: -0.03em; line-height: 1; flex-shrink: 0; transition: color 0.3s; }
-.landing-step:hover .landing-step-num { color: var(--neon); }
+.landing-step:hover .landing-step-num, .landing-step.is-active .landing-step-num { color: var(--neon); }
 .landing-step-title { font-size: 16px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
 .landing-step-body { font-size: 13.5px; color: var(--ink3); line-height: 1.6; max-width: 480px; }
 .landing-step svg { transition: transform 0.3s cubic-bezier(.4,0,.2,1); }
@@ -647,12 +656,14 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
   .feature-row { grid-template-columns: repeat(2, 1fr); }
   .detail-grid { grid-template-columns: 1fr; }
   .hero-title { font-size: 42px; }
+  .hero-core { width: 220px; height: 220px; }
 }
 @media (max-width: 560px) {
   .mkt-grid { grid-template-columns: 1fr; }
   .feature-row { grid-template-columns: 1fr; }
   .hero { padding: 48px 20px 40px; }
   .hero-title { font-size: 30px; }
+  .hero-core { width: 160px; height: 160px; }
   .landing-root::before, .landing-root::after { display: none; }
 }
 
@@ -712,7 +723,7 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-gradient, .hero-glow-follow, .landing-root::before, .landing-root::after, .agent-strip-marquee { animation: none !important; }
+  .hero-gradient, .hero-glow-follow, .landing-root::before, .landing-root::after, .agent-strip-marquee, .x407-mark-glow { animation: none !important; }
   .mkt-card, .reveal, .stagger > *, .hero-content > * {
     animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important;
   }
