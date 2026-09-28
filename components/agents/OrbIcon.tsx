@@ -38,7 +38,12 @@ export default function OrbIcon({ color }: { color: string }) {
     pointLight.position.set(2, 2, 2)
     scene.add(pointLight)
 
-    const geometry = new THREE.IcosahedronGeometry(1, 2)
+    // SphereGeometry, not IcosahedronGeometry: no per-vertex JS work happens
+    // here (just whole-mesh rotation + a material scalar), so vertex count is
+    // pure GPU cost — trivial even at high segment counts, and a UV-sphere
+    // reads as reliably round under specular light where a subdivided
+    // icosahedron can still show faceted highlights.
+    const geometry = new THREE.SphereGeometry(1, 32, 32)
     const material = new THREE.MeshStandardMaterial({
       color, emissive: color, emissiveIntensity: 0.6, roughness: 0.3, metalness: 0.1,
     })

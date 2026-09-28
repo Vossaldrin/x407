@@ -49,7 +49,12 @@ export default function AgentOrb({ color, status }: { color: string; status: Age
     pointLight.position.set(2, 2, 2)
     scene.add(pointLight)
 
-    const geometry = new THREE.IcosahedronGeometry(1, 5)
+    // SphereGeometry, not IcosahedronGeometry: a UV-sphere reads as reliably
+    // round under moving specular light, where even a heavily-subdivided
+    // icosahedron can still show faceted highlights. 48x48 segments (~2.4k
+    // vertices) is smoother than the icosahedron this replaced (10242 verts)
+    // while actually being lighter on the per-frame CPU wobble loop below.
+    const geometry = new THREE.SphereGeometry(1, 48, 48)
     const basePositions = geometry.attributes.position.array.slice()
     const material = new THREE.MeshStandardMaterial({
       color,
