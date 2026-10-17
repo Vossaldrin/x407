@@ -518,6 +518,38 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
   color: var(--ink2); white-space: pre-wrap; word-break: break-word;
 }
 .equip-card pre .tok-cmd { color: var(--neon); }
+.equip-brands {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 14px;
+  padding: 10px 16px 14px; border-top: 1px solid var(--line);
+}
+.equip-brands-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink3); margin-right: 2px; }
+.equip-brand {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 500;
+  color: var(--ink3); transition: color 0.2s;
+}
+.equip-brand:hover { color: var(--neon); }
+
+/* ── Hero floating 3D tiles — wallet / identity / money / agent / limits / swap ── */
+.hero-floaters {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none; perspective: 900px;
+  transform: translate(calc((var(--mxn, 0.5) - 0.5) * -22px), calc((var(--myn, 0.5) - 0.5) * -16px));
+  transition: transform 0.3s ease-out;
+}
+.hero-floater {
+  position: absolute; width: 46px; height: 46px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; color: var(--neon);
+  background: linear-gradient(145deg, rgba(200,245,66,0.10), rgba(255,255,255,0.03));
+  border: 1px solid rgba(200,245,66,0.22); backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08);
+  transform-style: preserve-3d;
+  animation-name: floater3d; animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite; animation-direction: alternate;
+}
+@keyframes floater3d {
+  from { transform: translateY(-8px) rotateX(9deg) rotateY(-11deg); }
+  to   { transform: translateY(10px) rotateX(-8deg) rotateY(13deg); }
+}
+@media (max-width: 860px) { .hero-floaters { display: none; } }
 
 /* Hero content fades/slides in on load, staggered — always visible on first paint so it animates on mount, not on scroll */
 .hero-content > * { opacity: 0; animation: cardIn 0.7s cubic-bezier(.4,0,.2,1) forwards; }
@@ -563,7 +595,13 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
 .landing-section-head h2 { font-family: var(--display); font-size: 40px; font-weight: 400; text-transform: uppercase; letter-spacing: 0.005em; line-height: 1.1; color: var(--ink); margin-bottom: 14px; }
 .landing-section-head p { font-size: 15px; color: var(--ink3); max-width: 480px; margin: 0 auto; line-height: 1.6; }
 
-.dash-preview { max-width: 880px; margin: 88px auto 0; border-radius: 20px; border: 1px solid var(--line); background: var(--card); overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.35); position: relative; }
+.dash-preview {
+  max-width: 880px; margin: 88px auto 0; border-radius: 20px; border: 1px solid var(--line);
+  background: var(--card); overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.35); position: relative;
+  /* Mouse-follow 3D tilt — unitless --mxn/--myn set by the hero's onMouseMove */
+  transform: perspective(1200px) rotateX(calc((var(--myn, 0.5) - 0.5) * -4deg)) rotateY(calc((var(--mxn, 0.5) - 0.5) * 6deg));
+  transition: transform 0.25s ease-out; will-change: transform;
+}
 .dash-preview-bar { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--card2); }
 .dash-preview-dots { display: flex; gap: 6px; }
 .dash-preview-dots span { width: 9px; height: 9px; border-radius: 50%; background: var(--line2); }

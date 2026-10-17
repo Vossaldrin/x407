@@ -87,7 +87,7 @@ MARKETPLACE = [
         "defaultDailyLimit": 150.0,
         "defaultPerTxLimit": 50.0,
         "color": "amber",
-        "featured": True,
+        "featured": False,
     },
     {
         "id": "tpl_travel_planner",
@@ -102,7 +102,7 @@ MARKETPLACE = [
         "defaultDailyLimit": 1000.0,
         "defaultPerTxLimit": 300.0,
         "color": "iris",
-        "featured": True,
+        "featured": False,
     },
     {
         "id": "tpl_research_bot",
@@ -162,7 +162,7 @@ MARKETPLACE = [
         "defaultDailyLimit": 100.0,
         "defaultPerTxLimit": 40.0,
         "color": "blue",
-        "featured": False,
+        "featured": True,
     },
     {
         "id": "tpl_investment_agent",
@@ -177,7 +177,7 @@ MARKETPLACE = [
         "defaultDailyLimit": 150.0,
         "defaultPerTxLimit": 150.0,
         "color": "emerald",
-        "featured": True,
+        "featured": False,
     },
     {
         "id": "tpl_customer_support",

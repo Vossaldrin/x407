@@ -8,8 +8,8 @@ import { useScrollProgress } from '@/lib/use-scroll-progress'
 import { useCountUp } from '@/lib/use-count-up'
 import { X407Mark } from '@/components/brand/X407Mark'
 import { StaticFallback } from '@/components/agents/OrbFallback'
-import { Lock, Zap, BarChart3, ArrowRight, ChevronRight, Star, Wallet, ShieldCheck, Globe, Check, X, ChevronDown, Copy } from 'lucide-react'
-import { SiEthereum, SiAnthropic, SiCircle } from 'react-icons/si'
+import { Lock, Zap, BarChart3, ArrowRight, ChevronRight, Star, Wallet, ShieldCheck, Globe, Check, X, ChevronDown, Copy, Fingerprint, CircleDollarSign, Bot, ArrowLeftRight } from 'lucide-react'
+import { SiEthereum, SiAnthropic, SiCircle, SiClaude, SiX, SiGooglegemini, SiDeepseek, SiMistralai, SiPerplexity } from 'react-icons/si'
 import type { IconType } from 'react-icons'
 
 const CoreOrb = dynamic(() => import('@/components/brand/CoreOrb'), {
@@ -111,6 +111,41 @@ function DashPreview({ templates }: { templates: { emoji?: string; name: string;
   )
 }
 
+// The hero's floating glass tiles — the core nouns of the product (wallet, identity
+// check, money, agent, limits, swap) drifting in 3D with a mouse parallax.
+const FLOATERS: { icon: JSX.Element; style: React.CSSProperties; dur: number; delay: number }[] = [
+  { icon: <Wallet size={18} />,           style: { top: '16%', left: '6%' },   dur: 9,    delay: 0 },
+  { icon: <Fingerprint size={18} />,      style: { top: '30%', right: '7%' },  dur: 11,   delay: 1.2 },
+  { icon: <CircleDollarSign size={18} />, style: { top: '60%', left: '10%' },  dur: 10,   delay: 0.6 },
+  { icon: <Bot size={18} />,              style: { top: '11%', right: '15%' }, dur: 12,   delay: 2 },
+  { icon: <ShieldCheck size={18} />,      style: { top: '70%', right: '11%' }, dur: 9.5,  delay: 1.6 },
+  { icon: <ArrowLeftRight size={18} />,   style: { top: '44%', left: '3%' },   dur: 11.5, delay: 2.4 },
+]
+
+function HeroFloaters() {
+  return (
+    <div className="hero-floaters" aria-hidden="true">
+      {FLOATERS.map((f, i) => (
+        <div key={i} className="hero-floater" style={{ ...f.style, animationDuration: `${f.dur}s`, animationDelay: `${f.delay}s` }}>
+          {f.icon}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// Real brand marks only (same rule as BUILT_ON) — GPT stays clean text since this
+// react-icons release has no OpenAI glyph.
+const AGENT_BRANDS: { name: string; icon?: IconType }[] = [
+  { name: 'Claude', icon: SiClaude },
+  { name: 'Grok', icon: SiX },
+  { name: 'Gemini', icon: SiGooglegemini },
+  { name: 'DeepSeek', icon: SiDeepseek },
+  { name: 'Mistral', icon: SiMistralai },
+  { name: 'Perplexity', icon: SiPerplexity },
+  { name: 'GPT' },
+]
+
 // Every step here is the real integration surface as it exists today (plain HTTP
 // API, in-memory state, key generated client-side) — no invented CLI or SDK.
 const EQUIP_PROMPT = `Equip my AI agent with an x407 wallet and spend rules so it can pay for its own APIs.
@@ -140,6 +175,14 @@ function EquipSnippet() {
         </button>
       </div>
       <pre>{EQUIP_PROMPT}</pre>
+      <div className="equip-brands">
+        <span className="equip-brands-label">Works with any agent</span>
+        {AGENT_BRANDS.map(({ name, icon: Icon }) => (
+          <span key={name} className="equip-brand" title={name}>
+            {Icon && <Icon size={13} />}{name}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
@@ -435,8 +478,13 @@ export default function LandingPage() {
   const onMouseMove = (e: MouseEvent<HTMLDivElement>) => {
     const rect = heroRef.current?.getBoundingClientRect()
     if (!rect) return
-    heroRef.current!.style.setProperty('--mx', `${((e.clientX - rect.left) / rect.width) * 100}%`)
-    heroRef.current!.style.setProperty('--my', `${((e.clientY - rect.top) / rect.height) * 100}%`)
+    const nx = (e.clientX - rect.left) / rect.width
+    const ny = (e.clientY - rect.top) / rect.height
+    heroRef.current!.style.setProperty('--mx', `${nx * 100}%`)
+    heroRef.current!.style.setProperty('--my', `${ny * 100}%`)
+    // Unitless copies for 3D math — calc() can't turn a % into degrees.
+    heroRef.current!.style.setProperty('--mxn', `${nx}`)
+    heroRef.current!.style.setProperty('--myn', `${ny}`)
   }
 
   return (
@@ -446,6 +494,7 @@ export default function LandingPage() {
       <div ref={heroRef} onMouseMove={onMouseMove} className="hero">
         <div className="hero-glow-follow" />
         <div className="hero-gradient" />
+        <HeroFloaters />
         <div className="hero-content">
           {/* Literal hex, not var(--neon) — THREE.Color can't resolve CSS custom properties. */}
           <div className="hero-core"><CoreOrb color="#C8F542" /></div>
@@ -464,7 +513,9 @@ export default function LandingPage() {
           </div>
           <EquipSnippet />
           <ProtocolSnippet />
-          <DashPreview templates={marketplace} />
+          {/* Wrapper takes the entrance animation so the preview itself is free to tilt —
+              cardIn's fill-mode would otherwise pin the transform. */}
+          <div><DashPreview templates={marketplace} /></div>
         </div>
       </div>
 
