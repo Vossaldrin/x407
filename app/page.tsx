@@ -8,7 +8,7 @@ import { useScrollProgress } from '@/lib/use-scroll-progress'
 import { useCountUp } from '@/lib/use-count-up'
 import { X407Mark } from '@/components/brand/X407Mark'
 import { StaticFallback } from '@/components/agents/OrbFallback'
-import { Lock, Zap, BarChart3, ArrowRight, ChevronRight, Star, Wallet, ShieldCheck, Globe, Check, X, ChevronDown } from 'lucide-react'
+import { Lock, Zap, BarChart3, ArrowRight, ChevronRight, Star, Wallet, ShieldCheck, Globe, Check, X, ChevronDown, Copy } from 'lucide-react'
 import { SiEthereum, SiAnthropic, SiCircle } from 'react-icons/si'
 import type { IconType } from 'react-icons'
 
@@ -107,6 +107,39 @@ function DashPreview({ templates }: { templates: { emoji?: string; name: string;
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// Every step here is the real integration surface as it exists today (plain HTTP
+// API, in-memory state, key generated client-side) — no invented CLI or SDK.
+const EQUIP_PROMPT = `Equip my AI agent with an x407 wallet and spend rules so it can pay for its own APIs.
+
+1. Boot x407 locally: git clone https://github.com/Vossaldrin/x407 && cd x407 && ./start-x407.sh
+2. Generate the agent's wallet locally — the private key must never leave this machine:
+   node -e "const{Wallet}=require('ethers');const w=Wallet.createRandom();console.log(w.address,w.privateKey)"
+3. Register the agent with my rules — POST http://localhost:8000/agents with:
+   {"name":"my-agent","address":"<WALLET_ADDRESS>","chain":"Base","dailyLimit":25,"perTxLimit":5,"actions":["pay_api","fetch_data"],"expiry":"2026-12-31"}
+4. Fund that address with a few dollars of USDC on Base mainnet.
+5. To buy a resource: GET its URL, read the HTTP 402 quote ("accepts": amount, asset, payTo), send exactly that USDC amount from the agent's wallet, then retry the request with the tx hash in X-PAYMENT-TX to unlock it. Every payment is checked against the limits from step 3 before it settles.`
+
+function EquipSnippet() {
+  const [copied, setCopied] = useState(false)
+  const copy = () => {
+    navigator.clipboard.writeText(EQUIP_PROMPT).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    }).catch(() => {})
+  }
+  return (
+    <div className="equip-card">
+      <div className="equip-head">
+        <span>Copy and send this to your agent</span>
+        <button className="equip-copy-btn" onClick={copy}>
+          {copied ? <Check size={13} /> : <Copy size={13} />}{copied ? 'Copied' : 'Copy'}
+        </button>
+      </div>
+      <pre>{EQUIP_PROMPT}</pre>
     </div>
   )
 }
@@ -415,7 +448,7 @@ export default function LandingPage() {
         <div className="hero-gradient" />
         <div className="hero-content">
           {/* Literal hex, not var(--neon) — THREE.Color can't resolve CSS custom properties. */}
-          <div className="hero-core"><CoreOrb color="#39FF88" /></div>
+          <div className="hero-core"><CoreOrb color="#C8F542" /></div>
           <div className="hero-eyebrow">HTTP 402 + 407 · USDC on Base · your keys, your limits</div>
           <h1 className="hero-title">Give your agent a wallet. Keep the limits.</h1>
           <p className="hero-subtitle">
@@ -429,6 +462,7 @@ export default function LandingPage() {
             <Link href="/marketplace" className="btn-primary-lg">Hire an agent on BotMart <ArrowRight size={15} /></Link>
             <Link href="/create" className="hero-cta-plain">Build your own</Link>
           </div>
+          <EquipSnippet />
           <ProtocolSnippet />
           <DashPreview templates={marketplace} />
         </div>

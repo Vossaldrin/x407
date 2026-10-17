@@ -166,7 +166,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>x407 — Identity & Wallet Rail for Autonomous Agents</title>
         <meta name="description" content="Hire and deploy autonomous AI agents" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%2339FF88'/><text x='50' y='70' font-size='58' font-family='monospace' font-weight='700' fill='%2304140A' text-anchor='middle'>&gt;</text></svg>" />
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23C8F542'/><text x='50' y='70' font-size='58' font-family='monospace' font-weight='700' fill='%2304140A' text-anchor='middle'>&gt;</text></svg>" />
       </head>
       <body>
         <StoreProvider>
