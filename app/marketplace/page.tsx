@@ -11,7 +11,7 @@ const OrbIcon = dynamic(() => import('@/components/agents/OrbIcon'), {
   loading: () => <StaticFallback color="var(--ink3)" />,
 })
 
-const CATEGORIES = ['All', 'Finance', 'Shopping', 'Research', 'Travel', 'Dev tools', 'Business']
+const CATEGORIES = ['All', 'Finance', 'Research', 'Dev tools']
 
 function AgentCard({ tpl }: { tpl: MarketplaceTemplate }) {
   const isFree = tpl.price === 'Free'

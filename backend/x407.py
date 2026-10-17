@@ -150,10 +150,20 @@ async def demo_unlock_response(source_id: str, paid_amount: float, tx_hash: str,
     }
 
 
-def check_limits(agent: dict, amount: float, blocked_cb=None):
+def check_limits(agent: dict, amount: float, blocked_cb=None, action=None):
     """Shared spend-rule enforcement for both the simulated and real payment paths.
-    Raises HTTPException(402/400) on violation, calling blocked_cb(reason) first if given."""
+    Raises HTTPException(402/400/403) on violation, calling blocked_cb(reason) first if given.
+    `action` (a str, or a list meaning any-of) gates the payment on the agent's
+    allowedActions — previously those were only shown to the chat model, never
+    enforced, which made "you set the rules" half-true."""
     from datetime import datetime
+
+    if action is not None:
+        wanted = [action] if isinstance(action, str) else list(action)
+        allowed = agent.get("allowedActions") or []
+        if not any(a in allowed for a in wanted):
+            if blocked_cb: blocked_cb("action_not_allowed")
+            raise HTTPException(403, f"Action '{wanted[0]}' is not in this agent's allowed actions")
 
     today = datetime.utcnow().date().isoformat()
     if agent.get("spentDate") != today:

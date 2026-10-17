@@ -12,7 +12,10 @@ const OrbIcon = dynamic(() => import('@/components/agents/OrbIcon'), {
 
 const CHAINS  = ['Base','Ethereum','Arbitrum','Optimism','Polygon'] as const
 const COLORS  = ['emerald','amber','iris','rose','blue','grey'] as const
-const ACTIONS = ['pay_api','fetch_data','buy_compute','trade','swap','shop','book_travel','deploy','scan']
+// The enforced vocabulary — these gate real payments in backend check_limits()
+// (pay_api/fetch_data for 402 resources, trade/swap for DEX, trigger_patch for
+// the dependency agent's tool), so no aspirational actions listed here.
+const ACTIONS = ['pay_api','fetch_data','trade','swap','trigger_patch']
 
 type F = {
   name: string; chain: string; dailyLimit: string; perTxLimit: string

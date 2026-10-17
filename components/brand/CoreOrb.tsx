@@ -6,12 +6,14 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { StaticFallback } from '@/components/agents/OrbFallback'
+import { addOrbShading } from '@/components/agents/orb-shading'
 
-// A calmer, fixed profile — a hero-scale orb wobbling as hard as a 150px
-// agent avatar would read as too busy at this size.
+// A true lit sphere — no vertex wobble (that read as a 2D shape-shifting
+// blob), low emissive so the key light's shading defines the form, and the
+// shared fresnel/halo rig for the glow. Rotation is made visible by a faint
+// wireframe graticule, since a uniformly-colored sphere spins invisibly.
 const SPEED = 0.5
-const AMPLITUDE = 0.1
-const EMISSIVE = 0.75
+const EMISSIVE = 0.18
 
 export default function CoreOrb({ color }: { color: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -38,28 +40,33 @@ export default function CoreOrb({ color }: { color: string }) {
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10)
     camera.position.z = 3
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4))
-    const pointLight = new THREE.PointLight(color, 1.6)
-    pointLight.position.set(2, 2, 2)
-    scene.add(pointLight)
+    const rig = addOrbShading(scene, color, { shellRadius: 1.18, haloScale: 2.3 })
 
     const geometry = new THREE.SphereGeometry(1, 48, 48)
-    const basePositions = geometry.attributes.position.array.slice()
     const material = new THREE.MeshStandardMaterial({
       color, emissive: color, emissiveIntensity: EMISSIVE,
-      roughness: 0.2, metalness: 0.1,
+      roughness: 0.3, metalness: 0.05,
     })
     const mesh = new THREE.Mesh(geometry, material)
     scene.add(mesh)
+
+    // Rotation cue: a barely-there graticule riding the same rotation.
+    const wireGeometry = new THREE.SphereGeometry(1.004, 24, 16)
+    const wireMaterial = new THREE.MeshBasicMaterial({
+      color, wireframe: true, transparent: true, opacity: 0.07, depthWrite: false,
+    })
+    const wire = new THREE.Mesh(wireGeometry, wireMaterial)
+    mesh.add(wire)
 
     // Reduced motion: keep the orb visible and lit, skip the continuous
     // wobble/rotation/tilt loop entirely rather than animating anyway.
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (prefersReducedMotion) {
-      geometry.computeVertexNormals()
       renderer.render(scene, camera)
       return () => {
-        geometry.dispose(); material.dispose(); renderer.dispose()
+        geometry.dispose(); material.dispose()
+        wireGeometry.dispose(); wireMaterial.dispose()
+        rig.dispose(); renderer.dispose()
         container.removeChild(renderer.domElement)
       }
     }
@@ -77,24 +84,9 @@ export default function CoreOrb({ color }: { color: string }) {
 
     let frameId: number
     const clock = new THREE.Clock()
-    const v = new THREE.Vector3()
 
     const animate = () => {
       const t = clock.getElapsedTime() * SPEED
-      const pos = geometry.attributes.position
-      for (let i = 0; i < pos.count; i++) {
-        const ox = basePositions[i * 3]
-        const oy = basePositions[i * 3 + 1]
-        const oz = basePositions[i * 3 + 2]
-        v.set(ox, oy, oz)
-        const wobble = 1 + AMPLITUDE * (
-          Math.sin(ox * 3.5 + t * 2) + Math.sin(oy * 4 + t * 2.3) + Math.sin(oz * 3 + t * 1.7)
-        ) / 3
-        v.multiplyScalar(wobble)
-        pos.setXYZ(i, v.x, v.y, v.z)
-      }
-      pos.needsUpdate = true
-      geometry.computeVertexNormals()
 
       // Scroll-driven: 0 while the hero is fully on screen, approaching 1 as
       // it scrolls past the top of the viewport — recede and spin away.
@@ -110,6 +102,8 @@ export default function CoreOrb({ color }: { color: string }) {
       mesh.position.z = -scrollProgress * 1.2
       material.opacity = 1 - scrollProgress * 0.6
       material.transparent = true
+      rig.tick(t)
+      rig.setGlow(1 - scrollProgress * 0.7)
 
       renderer.render(scene, camera)
       frameId = requestAnimationFrame(animate)
@@ -121,6 +115,9 @@ export default function CoreOrb({ color }: { color: string }) {
       window.removeEventListener('pointermove', onPointerMove)
       geometry.dispose()
       material.dispose()
+      wireGeometry.dispose()
+      wireMaterial.dispose()
+      rig.dispose()
       renderer.dispose()
       container.removeChild(renderer.domElement)
     }

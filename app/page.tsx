@@ -182,6 +182,7 @@ function EquipSnippet() {
             {Icon && <Icon size={13} />}{name}
           </span>
         ))}
+        <Link href="/connect" className="equip-connect-link">or connect yours in the app →</Link>
       </div>
     </div>
   )

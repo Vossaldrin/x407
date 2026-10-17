@@ -10,12 +10,16 @@ import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { AgentStatus } from '@/lib/store'
 import { StaticFallback } from './OrbFallback'
+import { addOrbShading } from './orb-shading'
 
-const ENERGY: Record<AgentStatus, { speed: number; amplitude: number; emissive: number; opacity: number }> = {
-  active:  { speed: 1.1, amplitude: 0.16, emissive: 0.9, opacity: 1 },
-  idle:    { speed: 0.4, amplitude: 0.09, emissive: 0.4, opacity: 0.85 },
-  paused:  { speed: 0.12, amplitude: 0.04, emissive: 0.15, opacity: 0.55 },
-  expired: { speed: 0.04, amplitude: 0.02, emissive: 0.08, opacity: 0.4 },
+// Status maps to rotation speed and glow strength on a properly lit sphere —
+// the old per-vertex wobble made the orb read as a 2D shape-shifting blob, so
+// it's gone; `glow` drives the shared fresnel/halo rig instead.
+const ENERGY: Record<AgentStatus, { speed: number; emissive: number; glow: number; opacity: number }> = {
+  active:  { speed: 1.1,  emissive: 0.25, glow: 1,    opacity: 1 },
+  idle:    { speed: 0.4,  emissive: 0.15, glow: 0.6,  opacity: 0.85 },
+  paused:  { speed: 0.12, emissive: 0.08, glow: 0.3,  opacity: 0.55 },
+  expired: { speed: 0.04, emissive: 0.05, glow: 0.15, opacity: 0.4 },
 }
 
 export default function AgentOrb({ color, status }: { color: string; status: AgentStatus }) {
@@ -44,24 +48,18 @@ export default function AgentOrb({ color, status }: { color: string; status: Age
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10)
     camera.position.z = 3
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.4))
-    const pointLight = new THREE.PointLight(color, 1.5)
-    pointLight.position.set(2, 2, 2)
-    scene.add(pointLight)
+    const rig = addOrbShading(scene, color, { shellRadius: 1.16, haloScale: 2.2, glow: energy.glow })
 
     // SphereGeometry, not IcosahedronGeometry: a UV-sphere reads as reliably
     // round under moving specular light, where even a heavily-subdivided
-    // icosahedron can still show faceted highlights. 48x48 segments (~2.4k
-    // vertices) is smoother than the icosahedron this replaced (10242 verts)
-    // while actually being lighter on the per-frame CPU wobble loop below.
+    // icosahedron can still show faceted highlights.
     const geometry = new THREE.SphereGeometry(1, 48, 48)
-    const basePositions = geometry.attributes.position.array.slice()
     const material = new THREE.MeshStandardMaterial({
       color,
       emissive: color,
       emissiveIntensity: energy.emissive,
-      roughness: 0.25,
-      metalness: 0.1,
+      roughness: 0.3,
+      metalness: 0.05,
       transparent: true,
       opacity: energy.opacity,
     })
@@ -70,27 +68,13 @@ export default function AgentOrb({ color, status }: { color: string; status: Age
 
     let frameId: number
     const clock = new THREE.Clock()
-    const v = new THREE.Vector3()
 
     const animate = () => {
       const t = clock.getElapsedTime() * energy.speed
-      const pos = geometry.attributes.position
-      for (let i = 0; i < pos.count; i++) {
-        const ox = basePositions[i * 3]
-        const oy = basePositions[i * 3 + 1]
-        const oz = basePositions[i * 3 + 2]
-        v.set(ox, oy, oz)
-        const wobble = 1 + energy.amplitude * (
-          Math.sin(ox * 3.5 + t * 2) + Math.sin(oy * 4 + t * 2.3) + Math.sin(oz * 3 + t * 1.7)
-        ) / 3
-        v.multiplyScalar(wobble)
-        pos.setXYZ(i, v.x, v.y, v.z)
-      }
-      pos.needsUpdate = true
-      geometry.computeVertexNormals()
 
       mesh.rotation.x = t * 0.2
       mesh.rotation.y = t * 0.3
+      rig.tick(t)
 
       renderer.render(scene, camera)
       frameId = requestAnimationFrame(animate)
@@ -101,6 +85,7 @@ export default function AgentOrb({ color, status }: { color: string; status: Age
       cancelAnimationFrame(frameId)
       geometry.dispose()
       material.dispose()
+      rig.dispose()
       renderer.dispose()
       container.removeChild(renderer.domElement)
     }

@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { StaticFallback } from './OrbFallback'
+import { addOrbShading } from './orb-shading'
 
 export default function OrbIcon({ color }: { color: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -31,12 +32,11 @@ export default function OrbIcon({ color }: { color: string }) {
 
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 10)
-    camera.position.z = 2.6
+    // Pulled back from 2.6 so the shading rig's fresnel shell and halo fit the
+    // square canvas instead of clipping at the edges.
+    camera.position.z = 3.1
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5))
-    const pointLight = new THREE.PointLight(color, 1.4)
-    pointLight.position.set(2, 2, 2)
-    scene.add(pointLight)
+    const rig = addOrbShading(scene, color, { shellRadius: 1.12, haloScale: 2.0 })
 
     // SphereGeometry, not IcosahedronGeometry: no per-vertex JS work happens
     // here (just whole-mesh rotation + a material scalar), so vertex count is
@@ -45,7 +45,7 @@ export default function OrbIcon({ color }: { color: string }) {
     // icosahedron can still show faceted highlights.
     const geometry = new THREE.SphereGeometry(1, 32, 32)
     const material = new THREE.MeshStandardMaterial({
-      color, emissive: color, emissiveIntensity: 0.6, roughness: 0.3, metalness: 0.1,
+      color, emissive: color, emissiveIntensity: 0.18, roughness: 0.3, metalness: 0.05,
     })
     const mesh = new THREE.Mesh(geometry, material)
     scene.add(mesh)
@@ -57,7 +57,8 @@ export default function OrbIcon({ color }: { color: string }) {
       const t = clock.getElapsedTime()
       mesh.rotation.x = t * 0.25
       mesh.rotation.y = t * 0.35
-      material.emissiveIntensity = 0.5 + Math.sin(t * 1.4) * 0.25
+      material.emissiveIntensity = 0.16 + Math.sin(t * 1.4) * 0.06
+      rig.tick(t)
       renderer.render(scene, camera)
       frameId = requestAnimationFrame(animate)
     }
@@ -67,6 +68,7 @@ export default function OrbIcon({ color }: { color: string }) {
       cancelAnimationFrame(frameId)
       geometry.dispose()
       material.dispose()
+      rig.dispose()
       renderer.dispose()
       container.removeChild(renderer.domElement)
     }

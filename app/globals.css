@@ -528,6 +528,8 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
   color: var(--ink3); transition: color 0.2s;
 }
 .equip-brand:hover { color: var(--neon); }
+.equip-connect-link { margin-left: auto; font-size: 11.5px; font-weight: 600; color: var(--neon); text-decoration: none; }
+.equip-connect-link:hover { color: var(--neon-hover); text-decoration: underline; text-underline-offset: 3px; }
 
 /* ── Hero floating 3D tiles — wallet / identity / money / agent / limits / swap ── */
 .hero-floaters {

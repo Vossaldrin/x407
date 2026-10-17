@@ -6,12 +6,13 @@ import { useState, useEffect, useRef } from 'react'
 import { StoreProvider, useStore } from '@/lib/store'
 import { connectWallet } from '@/lib/wallet-connect'
 import { X407Mark } from '@/components/brand/X407Mark'
-import { Store, Bot, Plus, Wallet as WalletIcon, ArrowLeftRight, Bell, Terminal } from 'lucide-react'
+import { Store, Bot, Plus, Wallet as WalletIcon, ArrowLeftRight, Bell, Terminal, Plug } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { href: '/marketplace',  label: 'BotMart',      icon: Store },
-  { href: '/passports',    label: 'My Agents',    icon: Bot },
-  { href: '/create',       label: 'Create Agent', icon: Plus },
+  { href: '/marketplace',  label: 'BotMart',       icon: Store },
+  { href: '/passports',    label: 'My Agents',     icon: Bot },
+  { href: '/create',       label: 'Create Agent',  icon: Plus },
+  { href: '/connect',      label: 'Connect Agent', icon: Plug },
   { href: '/wallet',       label: 'Wallet',       icon: WalletIcon },
   { href: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
   { href: '/developers',   label: 'Developers',   icon: Terminal },

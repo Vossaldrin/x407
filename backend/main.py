@@ -75,36 +75,6 @@ MARKETPLACE = [
         "featured": True,
     },
     {
-        "id": "tpl_grocery_scout",
-        "name": "Grocery Scout",
-        "emoji": "🛒",
-        "category": "Shopping",
-        "description": "Finds the best prices, places orders, and tracks deliveries for your weekly groceries.",
-        "price": "$4/mo",
-        "rating": 4.7,
-        "hiredCount": 8100,
-        "defaultActions": ["shop", "pay_api", "fetch_data"],
-        "defaultDailyLimit": 150.0,
-        "defaultPerTxLimit": 50.0,
-        "color": "amber",
-        "featured": False,
-    },
-    {
-        "id": "tpl_travel_planner",
-        "name": "Travel Planner",
-        "emoji": "✈️",
-        "category": "Travel",
-        "description": "Books flights, hotels, and activities at optimal prices. Works 24/7 to find deals.",
-        "price": "$6/mo",
-        "rating": 4.8,
-        "hiredCount": 1900,
-        "defaultActions": ["book_travel", "shop", "pay_api", "fetch_data"],
-        "defaultDailyLimit": 1000.0,
-        "defaultPerTxLimit": 300.0,
-        "color": "iris",
-        "featured": False,
-    },
-    {
         "id": "tpl_research_bot",
         "name": "Research Bot",
         "emoji": "🔬",
@@ -118,36 +88,6 @@ MARKETPLACE = [
         "defaultPerTxLimit": 5.0,
         "color": "rose",
         "featured": True,
-    },
-    {
-        "id": "tpl_budget_guard",
-        "name": "Budget Guard",
-        "emoji": "💰",
-        "category": "Finance",
-        "description": "Monitors subscriptions, cancels unused ones, and renegotiates bills automatically.",
-        "price": "$12/mo",
-        "rating": 4.9,
-        "hiredCount": 5200,
-        "defaultActions": ["pay_api", "fetch_data", "cancel_subscription"],
-        "defaultDailyLimit": 200.0,
-        "defaultPerTxLimit": 50.0,
-        "color": "emerald",
-        "featured": False,
-    },
-    {
-        "id": "tpl_log_triage",
-        "name": "Log & Incident Triage Agent",
-        "emoji": "🚨",
-        "category": "Dev tools",
-        "description": "Watches your logs and alerts, triages incidents by severity, and pays for the monitoring tools it needs to keep watching.",
-        "price": "$16/mo",
-        "rating": 4.7,
-        "hiredCount": 740,
-        "defaultActions": ["pay_api", "fetch_data", "triage_incident"],
-        "defaultDailyLimit": 150.0,
-        "defaultPerTxLimit": 50.0,
-        "color": "rose",
-        "featured": False,
     },
     {
         "id": "tpl_dependency_patch",
@@ -164,97 +104,8 @@ MARKETPLACE = [
         "color": "blue",
         "featured": True,
     },
-    {
-        "id": "tpl_investment_agent",
-        "name": "Investment Agent",
-        "emoji": "🌱",
-        "category": "Finance",
-        "description": "Invests a fixed amount on a schedule into low-risk assets — passive wealth building on autopilot.",
-        "price": "$8/mo",
-        "rating": 4.8,
-        "hiredCount": 2100,
-        "defaultActions": ["trade", "fetch_data", "pay_api"],
-        "defaultDailyLimit": 150.0,
-        "defaultPerTxLimit": 150.0,
-        "color": "emerald",
-        "featured": False,
-    },
-    {
-        "id": "tpl_customer_support",
-        "name": "Customer Support Agent",
-        "emoji": "🎧",
-        "category": "Business",
-        "description": "Handles small refunds and support payments within approved limits, without waiting on a human.",
-        "price": "$10/mo",
-        "rating": 4.6,
-        "hiredCount": 1400,
-        "defaultActions": ["pay_api", "fetch_data", "issue_refund"],
-        "defaultDailyLimit": 250.0,
-        "defaultPerTxLimit": 50.0,
-        "color": "iris",
-        "featured": False,
-    },
-    {
-        "id": "tpl_inbox_filer",
-        "name": "Inbox & Document Filer Agent",
-        "emoji": "📥",
-        "category": "Business",
-        "description": "Sorts incoming email and documents into the right folders, extracts key details, and pays for the parsing tools it uses.",
-        "price": "$5/mo",
-        "rating": 4.6,
-        "hiredCount": 1150,
-        "defaultActions": ["pay_api", "fetch_data", "file_document"],
-        "defaultDailyLimit": 40.0,
-        "defaultPerTxLimit": 10.0,
-        "color": "blue",
-        "featured": False,
-    },
-    {
-        "id": "tpl_calendar_agent",
-        "name": "Appointment & Calendar Agent",
-        "emoji": "📅",
-        "category": "Business",
-        "description": "Schedules and reschedules appointments across calendars, and pays for the booking and calendar APIs it needs.",
-        "price": "$5/mo",
-        "rating": 4.7,
-        "hiredCount": 1320,
-        "defaultActions": ["pay_api", "fetch_data", "schedule_appointment"],
-        "defaultDailyLimit": 40.0,
-        "defaultPerTxLimit": 10.0,
-        "color": "amber",
-        "featured": False,
-    },
-    {
-        "id": "tpl_receipt_logger",
-        "name": "Receipt & Expense Logger Agent",
-        "emoji": "🧾",
-        "category": "Finance",
-        "description": "Reads receipts, logs expenses to the right category, and pays for the OCR and parsing tools it uses.",
-        "price": "$6/mo",
-        "rating": 4.6,
-        "hiredCount": 980,
-        "defaultActions": ["pay_api", "fetch_data", "log_expense"],
-        "defaultDailyLimit": 40.0,
-        "defaultPerTxLimit": 10.0,
-        "color": "emerald",
-        "featured": False,
-    },
-    {
-        "id": "tpl_form_filler",
-        "name": "Form-Filler & Data Entry Agent",
-        "emoji": "📝",
-        "category": "Business",
-        "description": "Fills out repetitive forms and data-entry tasks from your source documents, paying for any lookup APIs it needs along the way.",
-        "price": "$7/mo",
-        "rating": 4.5,
-        "hiredCount": 860,
-        "defaultActions": ["pay_api", "fetch_data", "fill_form"],
-        "defaultDailyLimit": 50.0,
-        "defaultPerTxLimit": 15.0,
-        "color": "grey",
-        "featured": False,
-    },
 ]
+
 
 # ── Models ────────────────────────────────────────────────────────────────────
 class AgentCreate(BaseModel):
@@ -873,7 +724,7 @@ async def quote_payment(body: QuoteRequest):
 
     amount = float(accept["amount"])
     trust.check_trust(agent, amount)
-    x407.check_limits(agent, amount)
+    x407.check_limits(agent, amount, action="pay_api")
 
     _last_quote[body.agentId] = {"resourceUrl": resource_url, "accept": accept, "quotedAtBlock": x407.current_block()}
     return {"agent": safe(agent), "quote": accept, "resourceUrl": resource_url}
@@ -903,7 +754,7 @@ async def execute_payment(body: ExecuteRequest):
         })
 
     trust.check_trust(agent, amount)
-    x407.check_limits(agent, amount, blocked_cb=blocked)
+    x407.check_limits(agent, amount, blocked_cb=blocked, action="pay_api")
 
     try:
         result = x407.verify_onchain_payment(body.txHash, agent["fullAddr"], accept["payTo"], amount, not_before_block=quoted.get("quotedAtBlock"))
@@ -946,7 +797,7 @@ def defi_quote(agentId: str, fromToken: str, toToken: str, amountIn: float):
     quote = dex.get_best_quote(fromToken, toToken, amountIn)
     notional = amountIn if fromToken == "USDC" else quote["amountOut"]
     trust.check_trust(agent, notional)
-    x407.check_limits(agent, notional)
+    x407.check_limits(agent, notional, action=["trade", "swap"])
 
     _last_defi_quote[agentId] = {"fromToken": fromToken, "toToken": toToken, "amountIn": amountIn, "notional": notional, "quotedAtBlock": x407.current_block()}
     return {"agent": safe(agent), "quote": quote}
@@ -973,7 +824,7 @@ def defi_execute(body: DefiExecuteRequest):
         })
 
     trust.check_trust(agent, quoted["notional"])
-    x407.check_limits(agent, quoted["notional"], blocked_cb=blocked)
+    x407.check_limits(agent, quoted["notional"], blocked_cb=blocked, action=["trade", "swap"])
 
     try:
         result = dex.verify_swap_onchain(body.txHash, agent["fullAddr"], body.fromToken, body.toToken, quoted["amountIn"], not_before_block=quoted.get("quotedAtBlock"))
