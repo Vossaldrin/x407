@@ -1,22 +1,15 @@
 'use client'
 import { Fragment, useEffect, useRef, useState, MouseEvent } from 'react'
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
 import { useStore, Transaction } from '@/lib/store'
 import { useReveal } from '@/lib/use-reveal'
 import { useScrollProgress } from '@/lib/use-scroll-progress'
 import { useCountUp } from '@/lib/use-count-up'
 import { X407Mark } from '@/components/brand/X407Mark'
 import LogoCard3D from '@/components/brand/LogoCard3D'
-import { StaticFallback } from '@/components/agents/OrbFallback'
 import { Lock, Zap, BarChart3, ArrowRight, ChevronRight, Star, Wallet, ShieldCheck, Globe, Check, X, ChevronDown, Copy, Fingerprint, CircleDollarSign, Bot, ArrowLeftRight } from 'lucide-react'
 import { SiEthereum, SiAnthropic, SiCircle, SiClaude, SiX, SiGooglegemini, SiDeepseek, SiMistralai, SiPerplexity } from 'react-icons/si'
 import type { IconType } from 'react-icons'
-
-const CoreOrb = dynamic(() => import('@/components/brand/CoreOrb'), {
-  ssr: false,
-  loading: () => <StaticFallback color="var(--neon)" />,
-})
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -121,9 +114,6 @@ const FLOATERS: { icon: JSX.Element; style: React.CSSProperties; dur: number; de
   { icon: <Bot size={18} />,              style: { top: '11%', right: '15%' }, dur: 12,   delay: 2 },
   { icon: <ShieldCheck size={18} />,      style: { top: '70%', right: '11%' }, dur: 9.5,  delay: 1.6 },
   { icon: <ArrowLeftRight size={18} />,   style: { top: '44%', left: '3%' },   dur: 11.5, delay: 2.4 },
-  // eslint-disable-next-line @next/next/no-img-element
-  { icon: <img src="/brand/logo-card-double-arc.png" alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />,
-    style: { top: '82%', left: '15%' }, dur: 10.5, delay: 3 },
 ]
 
 function HeroFloaters() {
@@ -502,8 +492,7 @@ export default function LandingPage() {
         <div className="hero-gradient" />
         <HeroFloaters />
         <div className="hero-content">
-          {/* Literal hex, not var(--neon) — THREE.Color can't resolve CSS custom properties. */}
-          <div className="hero-core"><CoreOrb color="#C8F542" /></div>
+          <div style={{ marginBottom: 20 }}><LogoCard3D size={240} /></div>
           <div className="hero-eyebrow">HTTP 402 + 407 · USDC on Base · your keys, your limits</div>
           <h1 className="hero-title">Give your agent a wallet. Keep the limits.</h1>
           <p className="hero-subtitle">

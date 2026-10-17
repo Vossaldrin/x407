@@ -483,7 +483,6 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
   position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 0%), rgba(200,245,66,0.14), transparent 70%);
 }
-.hero-core { width: 300px; height: 300px; margin: 0 auto 12px; }
 .hero-eyebrow {
   font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--neon); margin-bottom: 18px;
@@ -789,14 +788,12 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
   .feature-row { grid-template-columns: repeat(2, 1fr); }
   .detail-grid { grid-template-columns: 1fr; }
   .hero-title { font-size: 54px; }
-  .hero-core { width: 220px; height: 220px; }
 }
 @media (max-width: 560px) {
   .mkt-grid { grid-template-columns: 1fr; }
   .feature-row { grid-template-columns: 1fr; }
   .hero { padding: 48px 20px 40px; }
   .hero-title { font-size: 38px; }
-  .hero-core { width: 160px; height: 160px; }
   .landing-root::before, .landing-root::after { display: none; }
 }
 

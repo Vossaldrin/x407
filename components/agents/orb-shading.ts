@@ -51,7 +51,7 @@ export function addOrbShading(
   const shellMaterial = new THREE.ShaderMaterial({
     uniforms: {
       uColor: { value: new THREE.Color(color) },
-      uStrength: { value: 0.85 * glow },
+      uStrength: { value: 0.6 * glow },
     },
     vertexShader: `
       varying vec3 vNormal;
@@ -68,8 +68,12 @@ export function addOrbShading(
       varying vec3 vNormal;
       varying vec3 vView;
       void main() {
-        float fresnel = pow(1.0 - abs(dot(vNormal, vView)), 2.5);
-        gl_FragColor = vec4(uColor, fresnel * uStrength);
+        float f = 1.0 - abs(dot(vNormal, vView));
+        // Band, not ramp: (1 - f^10) pulls the glow back to zero at the
+        // geometric silhouette, so the shell fades out instead of ending in a
+        // hard visible ring at its own edge.
+        float band = pow(f, 2.5) * (1.0 - pow(f, 10.0)) * 1.8;
+        gl_FragColor = vec4(uColor, band * uStrength);
       }`,
     transparent: true,
     blending: THREE.AdditiveBlending,
@@ -86,7 +90,7 @@ export function addOrbShading(
     transparent: true,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
-    opacity: 0.5 * glow,
+    opacity: 0.35 * glow,
   })
   const halo = new THREE.Sprite(haloMaterial)
   halo.scale.setScalar(haloScale)
@@ -96,12 +100,12 @@ export function addOrbShading(
   let currentGlow = glow
   return {
     tick: (t: number) => {
-      haloMaterial.opacity = (0.42 + Math.sin(t * 1.3) * 0.1) * currentGlow
+      haloMaterial.opacity = (0.3 + Math.sin(t * 1.3) * 0.07) * currentGlow
     },
     setGlow: (g: number) => {
       currentGlow = g
-      shellMaterial.uniforms.uStrength.value = 0.85 * g
-      haloMaterial.opacity = 0.5 * g
+      shellMaterial.uniforms.uStrength.value = 0.6 * g
+      haloMaterial.opacity = 0.35 * g
     },
     dispose: () => {
       shellGeometry.dispose()
