@@ -9,9 +9,9 @@ import { StaticFallback } from '@/components/agents/OrbFallback'
 import { addOrbShading } from '@/components/agents/orb-shading'
 
 // A true lit sphere — no vertex wobble (that read as a 2D shape-shifting
-// blob), low emissive so the key light's shading defines the form, and the
-// shared fresnel/halo rig for the glow. Rotation is made visible by a faint
-// wireframe graticule, since a uniformly-colored sphere spins invisibly.
+// blob), no wireframe overlay (read as borders), low emissive so the key
+// light's shading defines the form, and the shared fresnel/halo rig for the
+// neon glow. Rotation shows only in the drifting specular highlight.
 const SPEED = 0.5
 const EMISSIVE = 0.18
 
@@ -50,14 +50,6 @@ export default function CoreOrb({ color }: { color: string }) {
     const mesh = new THREE.Mesh(geometry, material)
     scene.add(mesh)
 
-    // Rotation cue: a barely-there graticule riding the same rotation.
-    const wireGeometry = new THREE.SphereGeometry(1.004, 24, 16)
-    const wireMaterial = new THREE.MeshBasicMaterial({
-      color, wireframe: true, transparent: true, opacity: 0.07, depthWrite: false,
-    })
-    const wire = new THREE.Mesh(wireGeometry, wireMaterial)
-    mesh.add(wire)
-
     // Reduced motion: keep the orb visible and lit, skip the continuous
     // wobble/rotation/tilt loop entirely rather than animating anyway.
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -65,7 +57,6 @@ export default function CoreOrb({ color }: { color: string }) {
       renderer.render(scene, camera)
       return () => {
         geometry.dispose(); material.dispose()
-        wireGeometry.dispose(); wireMaterial.dispose()
         rig.dispose(); renderer.dispose()
         container.removeChild(renderer.domElement)
       }
@@ -115,8 +106,6 @@ export default function CoreOrb({ color }: { color: string }) {
       window.removeEventListener('pointermove', onPointerMove)
       geometry.dispose()
       material.dispose()
-      wireGeometry.dispose()
-      wireMaterial.dispose()
       rig.dispose()
       renderer.dispose()
       container.removeChild(renderer.domElement)
