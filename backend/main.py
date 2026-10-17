@@ -54,6 +54,8 @@ app.add_middleware(
 agents_db: dict = {}
 transactions_db: list = []
 bills_db: dict = {}  # {bill_id: {..., agentId}} — user-entered real bills for Budget Guard
+refunds_db: dict = {}  # {refund_id: {..., agentId}} — user-entered real refunds for Customer Support Agent
+groceries_db: dict = {}  # {item_id: {..., agentId}} — user-entered real shopping list for Grocery Scout
 
 # ── Marketplace catalogue ─────────────────────────────────────────────────────
 MARKETPLACE = [
@@ -133,48 +135,33 @@ MARKETPLACE = [
         "featured": False,
     },
     {
-        "id": "tpl_news_curator",
-        "name": "News Curator",
-        "emoji": "📰",
-        "category": "Research",
-        "description": "Aggregates and summarises news across sources, delivers a daily briefing.",
-        "price": "Free",
-        "rating": 4.5,
-        "hiredCount": 6700,
-        "defaultActions": ["fetch_data", "pay_api"],
-        "defaultDailyLimit": 10.0,
-        "defaultPerTxLimit": 2.0,
-        "color": "amber",
-        "featured": False,
-    },
-    {
-        "id": "tpl_price_hawk",
-        "name": "Price Hawk",
-        "emoji": "🦅",
-        "category": "Shopping",
-        "description": "Tracks prices across retailers and auto-buys when your target price is hit.",
-        "price": "$3/mo",
-        "rating": 4.7,
-        "hiredCount": 3300,
-        "defaultActions": ["shop", "fetch_data", "pay_api"],
-        "defaultDailyLimit": 500.0,
-        "defaultPerTxLimit": 200.0,
-        "color": "iris",
-        "featured": False,
-    },
-    {
-        "id": "tpl_dev_ops",
-        "name": "DevOps Agent",
-        "emoji": "⚙️",
+        "id": "tpl_log_triage",
+        "name": "Log & Incident Triage Agent",
+        "emoji": "🚨",
         "category": "Dev tools",
-        "description": "Monitors your infra, spins up instances, and pays for cloud services autonomously.",
-        "price": "$15/mo",
-        "rating": 4.8,
-        "hiredCount": 980,
-        "defaultActions": ["pay_api", "fetch_data", "deploy"],
-        "defaultDailyLimit": 300.0,
-        "defaultPerTxLimit": 100.0,
+        "description": "Watches your logs and alerts, triages incidents by severity, and pays for the monitoring tools it needs to keep watching.",
+        "price": "$16/mo",
+        "rating": 4.7,
+        "hiredCount": 740,
+        "defaultActions": ["pay_api", "fetch_data", "triage_incident"],
+        "defaultDailyLimit": 150.0,
+        "defaultPerTxLimit": 50.0,
         "color": "rose",
+        "featured": False,
+    },
+    {
+        "id": "tpl_dependency_patch",
+        "name": "Dependency & Security Patch Agent",
+        "emoji": "🛡️",
+        "category": "Dev tools",
+        "description": "Scans your dependencies for vulnerabilities and outdated packages, and pays for the scanning and patch services it uses to keep them current.",
+        "price": "$13/mo",
+        "rating": 4.6,
+        "hiredCount": 610,
+        "defaultActions": ["pay_api", "fetch_data", "trigger_patch"],
+        "defaultDailyLimit": 100.0,
+        "defaultPerTxLimit": 40.0,
+        "color": "blue",
         "featured": False,
     },
     {
@@ -208,34 +195,64 @@ MARKETPLACE = [
         "featured": False,
     },
     {
-        "id": "tpl_lead_gen",
-        "name": "Lead Generation Agent",
-        "emoji": "📊",
+        "id": "tpl_inbox_filer",
+        "name": "Inbox & Document Filer Agent",
+        "emoji": "📥",
         "category": "Business",
-        "description": "Pays for data and outreach tools, runs campaigns, and scales prospecting within your budget.",
-        "price": "$14/mo",
+        "description": "Sorts incoming email and documents into the right folders, extracts key details, and pays for the parsing tools it uses.",
+        "price": "$5/mo",
+        "rating": 4.6,
+        "hiredCount": 1150,
+        "defaultActions": ["pay_api", "fetch_data", "file_document"],
+        "defaultDailyLimit": 40.0,
+        "defaultPerTxLimit": 10.0,
+        "color": "blue",
+        "featured": False,
+    },
+    {
+        "id": "tpl_calendar_agent",
+        "name": "Appointment & Calendar Agent",
+        "emoji": "📅",
+        "category": "Business",
+        "description": "Schedules and reschedules appointments across calendars, and pays for the booking and calendar APIs it needs.",
+        "price": "$5/mo",
         "rating": 4.7,
-        "hiredCount": 890,
-        "defaultActions": ["pay_api", "fetch_data", "run_campaign"],
-        "defaultDailyLimit": 400.0,
-        "defaultPerTxLimit": 100.0,
+        "hiredCount": 1320,
+        "defaultActions": ["pay_api", "fetch_data", "schedule_appointment"],
+        "defaultDailyLimit": 40.0,
+        "defaultPerTxLimit": 10.0,
         "color": "amber",
         "featured": False,
     },
     {
-        "id": "tpl_smart_assistant",
-        "name": "Smart Assistant Agent",
-        "emoji": "🧭",
-        "category": "Personal",
-        "description": "An all-in-one agent for shopping, price monitoring, booking, and everyday optimization.",
-        "price": "$11/mo",
-        "rating": 4.9,
-        "hiredCount": 3600,
-        "defaultActions": ["shop", "book_travel", "fetch_data", "pay_api"],
-        "defaultDailyLimit": 300.0,
-        "defaultPerTxLimit": 100.0,
-        "color": "rose",
-        "featured": True,
+        "id": "tpl_receipt_logger",
+        "name": "Receipt & Expense Logger Agent",
+        "emoji": "🧾",
+        "category": "Finance",
+        "description": "Reads receipts, logs expenses to the right category, and pays for the OCR and parsing tools it uses.",
+        "price": "$6/mo",
+        "rating": 4.6,
+        "hiredCount": 980,
+        "defaultActions": ["pay_api", "fetch_data", "log_expense"],
+        "defaultDailyLimit": 40.0,
+        "defaultPerTxLimit": 10.0,
+        "color": "emerald",
+        "featured": False,
+    },
+    {
+        "id": "tpl_form_filler",
+        "name": "Form-Filler & Data Entry Agent",
+        "emoji": "📝",
+        "category": "Business",
+        "description": "Fills out repetitive forms and data-entry tasks from your source documents, paying for any lookup APIs it needs along the way.",
+        "price": "$7/mo",
+        "rating": 4.5,
+        "hiredCount": 860,
+        "defaultActions": ["pay_api", "fetch_data", "fill_form"],
+        "defaultDailyLimit": 50.0,
+        "defaultPerTxLimit": 15.0,
+        "color": "grey",
+        "featured": False,
     },
 ]
 
@@ -292,6 +309,20 @@ class BillCreate(BaseModel):
     payToAddress: str  # there's no real Netflix/Spotify billing API to reach — the
                         # user names their own real recipient, which is what makes
                         # the resulting payment genuinely real
+
+class RefundCreate(BaseModel):
+    customerName: str
+    reason: str = "Refund"
+    amount: float
+    payToAddress: str  # the customer's real wallet — there's no support-ticket
+                        # system to pull this from, so the user enters it directly
+
+class GroceryItemCreate(BaseModel):
+    item: str
+    maxPrice: float
+    payToAddress: str  # the store/seller's real wallet — there's no real
+                        # cross-retailer price-comparison API to reach, so the
+                        # user names their own target price and recipient
 
 class QuoteRequest(BaseModel):
     agentId: str
@@ -673,6 +704,141 @@ async def bill_invoice(bill_id: str, request: Request):
         "source": bill["name"], "paidAmount": result["amount"], "txHash": result["txHash"],
     })
 
+# ── Refunds (Customer Support Agent — real user-entered refunds, real payment rail) ─
+# Same shape as bills above: no real support-ticket system to pull a customer's
+# wallet from, so the user enters it directly; the resulting payment is real.
+
+def _refund_invoice_quote(refund: dict) -> dict:
+    return {
+        "x402Version": 1,
+        "accepts": [{
+            "scheme": "exact", "network": "base",
+            "amount": str(refund["amount"]), "asset": x407.USDC_BASE,
+            "payTo": refund["payToAddress"],
+            "resource": f"/refunds/{refund['id']}/invoice",
+            "description": f"Refund to {refund['customerName']} ({refund['reason']})",
+            "maxTimeoutSeconds": 300,
+        }],
+    }
+
+@app.post("/agents/{agent_id}/refunds", status_code=201)
+def create_refund(agent_id: str, body: RefundCreate):
+    if agent_id not in agents_db:
+        raise HTTPException(404, "Agent not found")
+    try:
+        pay_to = Web3.to_checksum_address(body.payToAddress)
+    except ValueError:
+        raise HTTPException(400, "Invalid payToAddress")
+    refund_id = f"refund_{int(time.time()*1000)}_{secrets.token_hex(3)}"
+    refund = {
+        "id": refund_id, "agentId": agent_id, "customerName": body.customerName,
+        "reason": body.reason, "amount": body.amount,
+        "payToAddress": pay_to, "paid": False,
+    }
+    refunds_db[refund_id] = refund
+    return refund
+
+@app.get("/agents/{agent_id}/refunds")
+def list_refunds(agent_id: str):
+    return {"refunds": [r for r in refunds_db.values() if r["agentId"] == agent_id]}
+
+@app.delete("/agents/{agent_id}/refunds/{refund_id}")
+def delete_refund(agent_id: str, refund_id: str):
+    refund = refunds_db.get(refund_id)
+    if not refund or refund["agentId"] != agent_id:
+        raise HTTPException(404, "Refund not found")
+    del refunds_db[refund_id]
+    return {"ok": True}
+
+@app.api_route("/refunds/{refund_id}/invoice", methods=["GET", "POST"])
+async def refund_invoice(refund_id: str, request: Request):
+    refund = refunds_db.get(refund_id)
+    if not refund:
+        raise HTTPException(404, f"Unknown refund '{refund_id}'")
+
+    tx_hash = request.query_params.get("txHash") or request.headers.get("X-PAYMENT-TX")
+    payer = request.query_params.get("payer") or request.headers.get("X-PAYMENT-FROM")
+
+    if not tx_hash:
+        return JSONResponse(status_code=402, content=_refund_invoice_quote(refund))
+
+    result = x407.verify_onchain_payment(tx_hash, payer or "", refund["payToAddress"], refund["amount"])
+    if abs(result["amount"] - refund["amount"]) > 1e-6:
+        raise HTTPException(402, "amount_mismatch_for_refund")
+    x407.mark_tx_consumed(tx_hash)
+    refund["paid"] = True
+    return JSONResponse(status_code=200, content={
+        "result": {"refundId": refund_id, "customerName": refund["customerName"], "status": "paid"},
+        "source": f"Refund: {refund['customerName']}", "paidAmount": result["amount"], "txHash": result["txHash"],
+    })
+
+# ── Groceries (Grocery Scout — real user-entered shopping list, real payment rail) ──
+# Same shape as bills: no real cross-retailer price-comparison API to reach, so the
+# user sets their own target price and recipient; the resulting payment is real.
+
+def _grocery_invoice_quote(item: dict) -> dict:
+    return {
+        "x402Version": 1,
+        "accepts": [{
+            "scheme": "exact", "network": "base",
+            "amount": str(item["maxPrice"]), "asset": x407.USDC_BASE,
+            "payTo": item["payToAddress"],
+            "resource": f"/groceries/{item['id']}/invoice",
+            "description": f"{item['item']} (grocery order)",
+            "maxTimeoutSeconds": 300,
+        }],
+    }
+
+@app.post("/agents/{agent_id}/groceries", status_code=201)
+def create_grocery_item(agent_id: str, body: GroceryItemCreate):
+    if agent_id not in agents_db:
+        raise HTTPException(404, "Agent not found")
+    try:
+        pay_to = Web3.to_checksum_address(body.payToAddress)
+    except ValueError:
+        raise HTTPException(400, "Invalid payToAddress")
+    item_id = f"grocery_{int(time.time()*1000)}_{secrets.token_hex(3)}"
+    item = {
+        "id": item_id, "agentId": agent_id, "item": body.item,
+        "maxPrice": body.maxPrice, "payToAddress": pay_to, "paid": False,
+    }
+    groceries_db[item_id] = item
+    return item
+
+@app.get("/agents/{agent_id}/groceries")
+def list_grocery_items(agent_id: str):
+    return {"items": [g for g in groceries_db.values() if g["agentId"] == agent_id]}
+
+@app.delete("/agents/{agent_id}/groceries/{item_id}")
+def delete_grocery_item(agent_id: str, item_id: str):
+    item = groceries_db.get(item_id)
+    if not item or item["agentId"] != agent_id:
+        raise HTTPException(404, "Item not found")
+    del groceries_db[item_id]
+    return {"ok": True}
+
+@app.api_route("/groceries/{item_id}/invoice", methods=["GET", "POST"])
+async def grocery_invoice(item_id: str, request: Request):
+    item = groceries_db.get(item_id)
+    if not item:
+        raise HTTPException(404, f"Unknown grocery item '{item_id}'")
+
+    tx_hash = request.query_params.get("txHash") or request.headers.get("X-PAYMENT-TX")
+    payer = request.query_params.get("payer") or request.headers.get("X-PAYMENT-FROM")
+
+    if not tx_hash:
+        return JSONResponse(status_code=402, content=_grocery_invoice_quote(item))
+
+    result = x407.verify_onchain_payment(tx_hash, payer or "", item["payToAddress"], item["maxPrice"])
+    if abs(result["amount"] - item["maxPrice"]) > 1e-6:
+        raise HTTPException(402, "amount_mismatch_for_item")
+    x407.mark_tx_consumed(tx_hash)
+    item["paid"] = True
+    return JSONResponse(status_code=200, content={
+        "result": {"itemId": item_id, "item": item["item"], "status": "paid"},
+        "source": item["item"], "paidAmount": result["amount"], "txHash": result["txHash"],
+    })
+
 @app.post("/payments/quote")
 async def quote_payment(body: QuoteRequest):
     agent = agents_db.get(body.agentId)
@@ -974,6 +1140,90 @@ TOOL_BY_FLOW: Dict[str, Dict[str, Any]] = {
             "type": "object",
             "properties": {"resourceUrl": {"type": "string"}},
             "required": [],
+        },
+    },
+    "refund": {
+        "name": "propose_refund",
+        "description": "Propose issuing a customer refund for the user to review, confirm, and pay in real USDC.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "customerName": {"type": "string"},
+                "reason": {"type": "string"},
+                "amount": {"type": "number", "description": "Amount in USDC, if the user mentioned one"},
+                "payToAddress": {"type": "string", "description": "Customer's wallet address, if provided"},
+            },
+            "required": ["customerName"],
+        },
+    },
+    "grocery": {
+        "name": "propose_grocery_item",
+        "description": "Propose adding an item to the shopping list for the user to review, confirm, and pay in real USDC.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "item": {"type": "string"},
+                "maxPrice": {"type": "number", "description": "Target max price in USDC, if the user mentioned one"},
+                "payToAddress": {"type": "string", "description": "Store/seller wallet address, if provided"},
+            },
+            "required": ["item"],
+        },
+    },
+    "triage": {
+        "name": "propose_triage",
+        "description": "Propose paying to triage a log snippet or alert for the user to review and confirm.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"logText": {"type": "string", "description": "The log snippet or alert payload to triage"}},
+            "required": ["logText"],
+        },
+    },
+    "dependency": {
+        "name": "propose_dependency_check",
+        "description": "Propose paying to check a package for known vulnerabilities for the user to review and confirm.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "package": {"type": "string"},
+                "ecosystem": {"type": "string", "description": "e.g. npm, PyPI, Go — defaults to npm"},
+            },
+            "required": ["package"],
+        },
+    },
+    "document": {
+        "name": "propose_document_filing",
+        "description": "Propose paying to classify and file a document/email for the user to review and confirm.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"documentText": {"type": "string", "description": "The email or document text to file"}},
+            "required": ["documentText"],
+        },
+    },
+    "calendar": {
+        "name": "propose_appointment",
+        "description": "Propose paying to schedule an appointment for the user to review and confirm.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"description": {"type": "string", "description": "Plain-language description of the appointment"}},
+            "required": ["description"],
+        },
+    },
+    "formfiller": {
+        "name": "propose_form_fill",
+        "description": "Propose paying to fill out a form from source data for the user to review and confirm.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"formText": {"type": "string", "description": "The target fields and the source data to pull values from"}},
+            "required": ["formText"],
+        },
+    },
+    "receipt": {
+        "name": "propose_receipt_log",
+        "description": "Propose paying to parse and log a receipt/expense for the user to review and confirm.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"receiptText": {"type": "string", "description": "The receipt or expense line item text"}},
+            "required": ["receiptText"],
         },
     },
 }

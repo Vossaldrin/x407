@@ -6,7 +6,7 @@ export interface ChatMessage {
 }
 
 export interface ProposedAction {
-  type: 'research' | 'finance' | 'travel' | 'defi' | 'api'
+  type: 'research' | 'finance' | 'travel' | 'defi' | 'api' | 'refund' | 'grocery' | 'triage' | 'dependency' | 'document' | 'calendar' | 'formfiller' | 'receipt'
   params: Record<string, any>
 }
 

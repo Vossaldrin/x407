@@ -11,6 +11,14 @@ function describeProposal(action: ProposedAction): string {
     case 'finance': return `Add bill: ${p.billName}${p.amount ? ` ($${p.amount})` : ''}`
     case 'travel': return `Search travel to ${p.destination}${p.maxBudget ? ` under $${p.maxBudget}` : ''}`
     case 'api': return `Pay for API${p.resourceUrl ? `: ${p.resourceUrl}` : ' (demo compute)'}`
+    case 'refund': return `Refund ${p.customerName}${p.amount ? ` ($${p.amount})` : ''}`
+    case 'grocery': return `Add to list: ${p.item}${p.maxPrice ? ` (up to $${p.maxPrice})` : ''}`
+    case 'triage': return `Triage incident: "${(p.logText || '').slice(0, 40)}${(p.logText || '').length > 40 ? '…' : ''}"`
+    case 'dependency': return `Check ${p.package}${p.ecosystem ? ` (${p.ecosystem})` : ''} for vulnerabilities`
+    case 'document': return `File document: "${(p.documentText || '').slice(0, 40)}${(p.documentText || '').length > 40 ? '…' : ''}"`
+    case 'calendar': return `Schedule: ${p.description}`
+    case 'formfiller': return `Fill form from: "${(p.formText || '').slice(0, 40)}${(p.formText || '').length > 40 ? '…' : ''}"`
+    case 'receipt': return `Log receipt: "${(p.receiptText || '').slice(0, 40)}${(p.receiptText || '').length > 40 ? '…' : ''}"`
     default: return 'Proposed action'
   }
 }

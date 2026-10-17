@@ -9,6 +9,14 @@ import { ResearchFlow } from '@/components/agents/ResearchFlow'
 import { FinanceFlow } from '@/components/agents/FinanceFlow'
 import { TravelFlow } from '@/components/agents/TravelFlow'
 import { DefiFlow } from '@/components/agents/DefiFlow'
+import { RefundFlow } from '@/components/agents/RefundFlow'
+import { GroceryFlow } from '@/components/agents/GroceryFlow'
+import { TriageFlow } from '@/components/agents/TriageFlow'
+import { DependencyFlow } from '@/components/agents/DependencyFlow'
+import { DocumentFilerFlow } from '@/components/agents/DocumentFilerFlow'
+import { CalendarFlow } from '@/components/agents/CalendarFlow'
+import { FormFillerFlow } from '@/components/agents/FormFillerFlow'
+import { ReceiptFlow } from '@/components/agents/ReceiptFlow'
 import { AgentChat } from '@/components/agents/AgentChat'
 import { VerifyIdentityCard } from '@/components/agents/VerifyIdentityCard'
 import { StaticFallback } from '@/components/agents/OrbFallback'
@@ -19,7 +27,7 @@ const AgentOrb = dynamic(() => import('@/components/agents/AgentOrb'), {
   loading: () => <StaticFallback color="var(--ink3)" />,
 })
 
-type FlowType = 'research' | 'finance' | 'travel' | 'defi' | 'api' | 'none'
+type FlowType = 'research' | 'finance' | 'travel' | 'defi' | 'api' | 'refund' | 'grocery' | 'triage' | 'dependency' | 'document' | 'calendar' | 'formfiller' | 'receipt' | 'none'
 
 const FLOW_BY_TEMPLATE: Record<string, FlowType> = {
   tpl_research_bot: 'research',
@@ -27,7 +35,14 @@ const FLOW_BY_TEMPLATE: Record<string, FlowType> = {
   tpl_travel_planner: 'travel',
   tpl_defi_trader: 'defi',
   tpl_investment_agent: 'defi',
-  tpl_dev_ops: 'api',
+  tpl_customer_support: 'refund',
+  tpl_grocery_scout: 'grocery',
+  tpl_log_triage: 'triage',
+  tpl_dependency_patch: 'dependency',
+  tpl_inbox_filer: 'document',
+  tpl_calendar_agent: 'calendar',
+  tpl_form_filler: 'formfiller',
+  tpl_receipt_logger: 'receipt',
 }
 
 function flowFor(agent: Agent): FlowType {
@@ -123,6 +138,42 @@ export default function AgentDetailPage() {
       {flow === 'api' && (
         <ApiPaymentFlow agent={agent} key={chatProposal ? JSON.stringify(chatProposal) : 'api'}
           initialResourceUrl={chatProposal?.type === 'api' ? chatProposal.params.resourceUrl : undefined} />
+      )}
+      {flow === 'refund' && (
+        <RefundFlow agent={agent} key={chatProposal ? JSON.stringify(chatProposal) : 'refund'}
+          initialCustomerName={chatProposal?.type === 'refund' ? chatProposal.params.customerName : undefined}
+          initialAmount={chatProposal?.type === 'refund' ? chatProposal.params.amount : undefined}
+          initialPayToAddress={chatProposal?.type === 'refund' ? chatProposal.params.payToAddress : undefined} />
+      )}
+      {flow === 'grocery' && (
+        <GroceryFlow agent={agent} key={chatProposal ? JSON.stringify(chatProposal) : 'grocery'}
+          initialItem={chatProposal?.type === 'grocery' ? chatProposal.params.item : undefined}
+          initialMaxPrice={chatProposal?.type === 'grocery' ? chatProposal.params.maxPrice : undefined}
+          initialPayToAddress={chatProposal?.type === 'grocery' ? chatProposal.params.payToAddress : undefined} />
+      )}
+      {flow === 'triage' && (
+        <TriageFlow agent={agent} key={chatProposal ? JSON.stringify(chatProposal) : 'triage'}
+          initialLogText={chatProposal?.type === 'triage' ? chatProposal.params.logText : undefined} />
+      )}
+      {flow === 'dependency' && (
+        <DependencyFlow agent={agent} key={chatProposal ? JSON.stringify(chatProposal) : 'dependency'}
+          initialPackage={chatProposal?.type === 'dependency' ? chatProposal.params.package : undefined} />
+      )}
+      {flow === 'document' && (
+        <DocumentFilerFlow agent={agent} key={chatProposal ? JSON.stringify(chatProposal) : 'document'}
+          initialDocumentText={chatProposal?.type === 'document' ? chatProposal.params.documentText : undefined} />
+      )}
+      {flow === 'calendar' && (
+        <CalendarFlow agent={agent} key={chatProposal ? JSON.stringify(chatProposal) : 'calendar'}
+          initialDescription={chatProposal?.type === 'calendar' ? chatProposal.params.description : undefined} />
+      )}
+      {flow === 'formfiller' && (
+        <FormFillerFlow agent={agent} key={chatProposal ? JSON.stringify(chatProposal) : 'formfiller'}
+          initialFormText={chatProposal?.type === 'formfiller' ? chatProposal.params.formText : undefined} />
+      )}
+      {flow === 'receipt' && (
+        <ReceiptFlow agent={agent} key={chatProposal ? JSON.stringify(chatProposal) : 'receipt'}
+          initialReceiptText={chatProposal?.type === 'receipt' ? chatProposal.params.receiptText : undefined} />
       )}
       {flow === 'none' && (
         <div className="card card-pad" style={{ textAlign: 'center', color: 'var(--ink3)', fontSize: 12.5 }}>

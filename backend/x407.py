@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 from web3 import Web3
 from fastapi import HTTPException
 import research_sources
+import task_tools
 
 # Native USDC on Base mainnet (Circle-issued FiatTokenProxy), 6 decimals.
 USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
@@ -84,10 +85,16 @@ def current_block() -> int:
 # Demo "premium data source" catalog for the Research Agent — stand-ins for
 # real x402-payable APIs, all settled through the same real on-chain rail.
 DEMO_SOURCES = {
-    "compute-api": {"name": "Compute API",  "price": 0.05, "description": "x407 demo compute API — 1 inference job"},
-    "market-data": {"name": "Market Data",  "price": 0.03, "description": "x407 demo market data feed — latest quotes"},
-    "web-search":  {"name": "Web Research", "price": 0.02, "description": "x407 demo web research snippet"},
-    "analytics":   {"name": "Analytics",    "price": 0.04, "description": "x407 demo analytics summary"},
+    "compute-api":       {"name": "Compute API",        "price": 0.05, "description": "x407 demo compute API — 1 inference job"},
+    "market-data":       {"name": "Market Data",        "price": 0.03, "description": "x407 demo market data feed — latest quotes"},
+    "web-search":        {"name": "Web Research",       "price": 0.02, "description": "x407 demo web research snippet"},
+    "analytics":         {"name": "Analytics",          "price": 0.04, "description": "x407 demo analytics summary"},
+    "incident-escalate": {"name": "Incident Escalation", "price": 0.06, "description": "x407 demo incident triage + escalation"},
+    "trigger-patch":     {"name": "Patch Trigger",       "price": 0.05, "description": "x407 demo dependency vulnerability check + patch trigger"},
+    "file-document":     {"name": "Document Filing",     "price": 0.02, "description": "x407 demo inbox/document filing"},
+    "calendar-api":      {"name": "Calendar API",        "price": 0.02, "description": "x407 demo appointment scheduling"},
+    "lookup-api":        {"name": "Lookup API",          "price": 0.02, "description": "x407 demo form-fill data lookup"},
+    "receipt-parsing":   {"name": "Receipt Parsing",     "price": 0.02, "description": "x407 demo receipt/expense parsing"},
 }
 
 
@@ -111,8 +118,9 @@ def demo_quote_response(source_id: str) -> dict:
 
 async def demo_unlock_response(source_id: str, paid_amount: float, tx_hash: str, topic: str = "") -> dict:
     """The 200 body once payment is verified. market-data/web-search/analytics call
-    real APIs (research_sources.py) using the caller's topic; compute-api stays a
-    demo concept — there's no real "buy one inference job" API to wire it to."""
+    real APIs (research_sources.py) using the caller's topic; the task-agent sources
+    call real reasoning/lookups (task_tools.py) using the caller's input; compute-api
+    stays a demo concept — there's no real "buy one inference job" API to wire it to."""
     source = DEMO_SOURCES[source_id]
     if source_id == "market-data":
         result = await research_sources.market_data(topic)
@@ -120,6 +128,18 @@ async def demo_unlock_response(source_id: str, paid_amount: float, tx_hash: str,
         result = await research_sources.analytics(topic)
     elif source_id == "web-search":
         result = await research_sources.web_search(topic)
+    elif source_id == "incident-escalate":
+        result = await task_tools.triage_incident(topic)
+    elif source_id == "trigger-patch":
+        result = await task_tools.check_dependency_vulns(topic)
+    elif source_id == "file-document":
+        result = await task_tools.classify_document(topic)
+    elif source_id == "calendar-api":
+        result = await task_tools.plan_appointment(topic)
+    elif source_id == "lookup-api":
+        result = await task_tools.fill_form(topic)
+    elif source_id == "receipt-parsing":
+        result = await task_tools.parse_receipt(topic)
     else:
         result = {"job": "inference-demo", "output": "42", "computeMs": 812}
     return {
