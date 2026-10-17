@@ -30,8 +30,12 @@ contract Deploy is Script {
 
         vm.startBroadcast(deployerKey);
 
-        TaskEscrow taskEscrow = new TaskEscrow(IERC20(usdcAddress));
+        // AgentRegistry must exist first: TaskEscrow takes its address at construction so it
+        // can report task outcomes into the registry's per-agent reputation stats.
         AgentRegistry agentRegistry = new AgentRegistry(IERC20(usdcAddress), minStake, deployer);
+        TaskEscrow taskEscrow = new TaskEscrow(IERC20(usdcAddress), address(agentRegistry));
+        agentRegistry.setTaskEscrow(address(taskEscrow));
+
         PaymentStream paymentStream = new PaymentStream(IERC20(usdcAddress));
         SpendGuardModule spendGuard = new SpendGuardModule();
 

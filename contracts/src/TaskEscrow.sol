@@ -5,6 +5,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
+interface IAgentRegistry {
+    function recordOutcome(address agent, bool success, uint256 amount) external;
+}
+
 /// @title TaskEscrow
 /// @notice Conditional USDC payouts for multi-step agent tasks. A hirer deposits funds for a
 /// task with a deadline; funds are only released to the agent on explicit confirmation or
@@ -38,6 +42,10 @@ contract TaskEscrow is ReentrancyGuard {
     }
 
     IERC20 public immutable usdc;
+    /// @notice Optional AgentRegistry to report outcomes to (address(0) disables reporting).
+    /// Set once at deploy: reputation bookkeeping isn't important enough to justify a mutable
+    /// admin surface on the escrow that holds the funds.
+    IAgentRegistry public immutable agentRegistry;
 
     uint256 public nextTaskId;
     mapping(uint256 => Task) public tasks;
@@ -47,6 +55,7 @@ contract TaskEscrow is ReentrancyGuard {
     event TaskReleased(uint256 indexed taskId, address indexed agent, uint256 amount);
     event TaskRefunded(uint256 indexed taskId, address indexed hirer, uint256 amount);
     event Withdrawn(address indexed account, uint256 amount);
+    event OutcomeReportFailed(uint256 indexed taskId, address indexed agent, bool success);
 
     error InvalidAmount();
     error InvalidDeadline();
@@ -55,8 +64,19 @@ contract TaskEscrow is ReentrancyGuard {
     error DeadlineNotReached();
     error NothingToWithdraw();
 
-    constructor(IERC20 _usdc) {
+    constructor(IERC20 _usdc, address _agentRegistry) {
         usdc = _usdc;
+        agentRegistry = IAgentRegistry(_agentRegistry);
+    }
+
+    /// @notice Best-effort report to the registry -- never lets a reputation-tracking failure
+    /// (registry not configured to trust this escrow, paused, buggy, etc.) block a real fund
+    /// release or refund. Swallows the revert and emits it as an event instead.
+    function _reportOutcome(uint256 taskId, address agent, bool success, uint256 amount) private {
+        if (address(agentRegistry) == address(0)) return;
+        try agentRegistry.recordOutcome(agent, success, amount) {} catch {
+            emit OutcomeReportFailed(taskId, agent, success);
+        }
     }
 
     /// @notice Hirer deposits `amount` USDC to fund a task for `agent`, due by `deadline`.
@@ -83,6 +103,7 @@ contract TaskEscrow is ReentrancyGuard {
         pendingWithdrawals[task.agent] += task.amount;
 
         emit TaskReleased(taskId, task.agent, task.amount);
+        _reportOutcome(taskId, task.agent, true, task.amount);
     }
 
     /// @notice Refunds a task's funds to its hirer. Only the hirer may call this, and only
@@ -97,6 +118,7 @@ contract TaskEscrow is ReentrancyGuard {
         pendingWithdrawals[task.hirer] += task.amount;
 
         emit TaskRefunded(taskId, task.hirer, task.amount);
+        _reportOutcome(taskId, task.agent, false, task.amount);
     }
 
     /// @notice Pulls the caller's accumulated released/refunded balance.

@@ -17,7 +17,7 @@ contract TaskEscrowTest is Test {
 
     function setUp() public {
         usdc = new MockERC20();
-        escrow = new TaskEscrow(usdc);
+        escrow = new TaskEscrow(usdc, address(0));
 
         usdc.mint(hirer, 1_000e6);
         vm.prank(hirer);

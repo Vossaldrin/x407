@@ -22,25 +22,38 @@ contract AgentRegistry is ReentrancyGuard, Ownable {
         uint256 registeredAt;
     }
 
+    /// @notice Reputation derived from TaskEscrow outcomes -- not portable, only meaningful
+    /// within this marketplace. See `getTrustScore` for the derived completion ratio.
+    struct AgentStats {
+        uint256 completed;
+        uint256 refunded;
+        uint256 volume;
+    }
+
     IERC20 public immutable stakeToken;
     uint256 public minStake;
     address public slashTreasury;
+    address public taskEscrow;
 
     mapping(address => AgentInfo) public agents;
     address[] public agentList;
     mapping(address => uint256) public pendingWithdrawals;
+    mapping(address => AgentStats) public stats;
 
     event AgentRegistered(address indexed agent, bytes32 metadataHash, uint256 stake);
     event AgentDeregistered(address indexed agent, uint256 refundedStake);
     event AgentSlashed(address indexed agent, uint256 slashedAmount, address indexed treasury);
     event MinStakeUpdated(uint256 minStake);
     event SlashTreasuryUpdated(address treasury);
+    event TaskEscrowUpdated(address taskEscrow);
+    event OutcomeRecorded(address indexed agent, bool success, uint256 amount);
     event Withdrawn(address indexed account, uint256 amount);
 
     error StakeTooLow();
     error AlreadyRegistered();
     error NotRegistered();
     error NothingToWithdraw();
+    error NotTaskEscrow();
 
     constructor(IERC20 _stakeToken, uint256 _minStake, address initialOwner) Ownable(initialOwner) {
         stakeToken = _stakeToken;
@@ -107,6 +120,46 @@ contract AgentRegistry is ReentrancyGuard, Ownable {
     function setSlashTreasury(address treasury) external onlyOwner {
         slashTreasury = treasury;
         emit SlashTreasuryUpdated(treasury);
+    }
+
+    /// @notice Points this registry at the TaskEscrow deployment allowed to report outcomes.
+    /// Restricted to the owner since it defines who can write to `stats`.
+    function setTaskEscrow(address _taskEscrow) external onlyOwner {
+        taskEscrow = _taskEscrow;
+        emit TaskEscrowUpdated(_taskEscrow);
+    }
+
+    /// @notice Records a completed or refunded task against an agent's history. Callable only
+    /// by the configured TaskEscrow -- this is the sole write path into `stats`, so reputation
+    /// can't be gamed by calling it directly. Tracks any address, registered or not, since a
+    /// task can complete before or without the agent ever registering here.
+    function recordOutcome(address agent, bool success, uint256 amount) external {
+        if (msg.sender != taskEscrow) revert NotTaskEscrow();
+
+        AgentStats storage s = stats[agent];
+        if (success) {
+            s.completed += 1;
+        } else {
+            s.refunded += 1;
+        }
+        s.volume += amount;
+
+        emit OutcomeRecorded(agent, success, amount);
+    }
+
+    /// @notice Completion ratio derived from TaskEscrow history, in basis points (0-10000).
+    /// Returns 0 for an agent with no recorded outcomes yet -- cold start, not a low score.
+    function getTrustScore(address agent)
+        external
+        view
+        returns (uint256 completed, uint256 refunded, uint256 volume, uint256 scoreBps)
+    {
+        AgentStats memory s = stats[agent];
+        completed = s.completed;
+        refunded = s.refunded;
+        volume = s.volume;
+        uint256 total = completed + refunded;
+        scoreBps = total == 0 ? 0 : (completed * 10_000) / total;
     }
 
     function getAgent(address agent) external view returns (AgentInfo memory) {

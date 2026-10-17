@@ -17,3 +17,6 @@ backend/__pycache__/
 # Foundry (contracts/) -- fetched via `forge install`, not committed
 /contracts/lib/
 /contracts/cache/
+
+# Local Anvil deployment records — only real-network broadcasts are committed as the paper trail
+contracts/broadcast/*/31337/
