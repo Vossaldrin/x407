@@ -1,5 +1,5 @@
 'use client'
-import { Fragment, useEffect, useRef, useState, MouseEvent } from 'react'
+import { useEffect, useRef, useState, MouseEvent } from 'react'
 import Link from 'next/link'
 import { useStore, Transaction } from '@/lib/store'
 import { useReveal } from '@/lib/use-reveal'
@@ -7,7 +7,7 @@ import { useScrollProgress } from '@/lib/use-scroll-progress'
 import { useCountUp } from '@/lib/use-count-up'
 import { X407Mark } from '@/components/brand/X407Mark'
 import LogoCard3D from '@/components/brand/LogoCard3D'
-import { Lock, Zap, BarChart3, ArrowRight, ChevronRight, Star, Wallet, ShieldCheck, Globe, Check, X, ChevronDown, Copy, Fingerprint, CircleDollarSign, Bot, ArrowLeftRight } from 'lucide-react'
+import { Lock, Zap, BarChart3, ArrowRight, ChevronRight, Star, Wallet, ShieldCheck, Globe, Check, ChevronDown, Copy, Fingerprint, CircleDollarSign, Bot, ArrowLeftRight } from 'lucide-react'
 import { SiEthereum, SiAnthropic, SiCircle, SiClaude, SiX, SiGooglegemini, SiDeepseek, SiMistralai, SiPerplexity } from 'react-icons/si'
 import type { IconType } from 'react-icons'
 
@@ -28,12 +28,16 @@ const STEPS = [
   { n: '03', title: 'Watch every payment land on Basescan', body: 'Hire in one click, fund the wallet, and track every transaction — confirmed or blocked — with a real hash you can verify yourself.' },
 ]
 
-const COMPARISON = [
-  { without: 'Hardcode an API key + your credit card into every agent', withX: 'Agent gets its own on-chain wallet the moment it deploys' },
-  { without: 'Hope the agent doesn’t overspend', withX: 'Daily limits and per-transaction caps enforced server-side, not by the agent’s own good behavior' },
-  { without: 'A bearer token anyone holding it can use, anywhere', withX: 'Every spend is a signed on-chain transaction from that agent’s own wallet' },
-  { without: 'No real record of what the agent actually paid for', withX: 'Every transaction logged with a hash you can verify yourself on Basescan' },
-  { without: 'Revoke access by hunting down every place a key was shared', withX: 'One-click revoke — the wallet was always scoped to just this agent' },
+// Agents holding their own wallets + passports is a new primitive, not an
+// upgrade over some "old way" — so this section explains what the primitive
+// buys you, instead of a before/after table.
+const PASSPORT_UTILITIES = [
+  { icon: <Fingerprint size={17} />, title: 'Provable identity', desc: 'An EIP-712 signature proves the agent controls its wallet — the 407 in x407. Its trust grade grows with a real track record of settled payments.' },
+  { icon: <Lock size={17} />, title: 'Rules it can’t break', desc: 'Daily cap, per-transaction limit, allowed actions, expiry — enforced server-side on every payment, not by the agent’s good behavior.' },
+  { icon: <Zap size={17} />, title: 'Real autonomy', desc: 'Its own funds, spent per action over HTTP 402. No human card on file, no shared API key to leak.' },
+  { icon: <BarChart3 size={17} />, title: 'Receipts on-chain', desc: 'Every payment settles with a hash you can check on Basescan — an audit trail you don’t have to take our word for.' },
+  { icon: <ShieldCheck size={17} />, title: 'Blast radius of one', desc: 'The wallet is scoped to a single agent. Pause or revoke the agent and that is the entire cleanup.' },
+  { icon: <Globe size={17} />, title: 'Any agent can hold one', desc: 'Grok bot, GPT script, cron job — if it speaks HTTP and can sign a transfer, it can carry a passport.' },
 ]
 
 // Real brand marks where Simple Icons actually has one — Base and Uniswap
@@ -55,6 +59,15 @@ const FAQ = [
   { q: 'Can another agent platform use x407, not just BotMart?', a: 'That’s the goal — x407 is a plain HTTP API for agent identity, wallets, and spend policy; BotMart is just the first thing built on top of it. It’s early access, though: no API-key auth yet, and agent/transaction state is in-memory and resets on restart. See the Developer docs for the actual integration surface as it exists today.' },
 ]
 
+const NAV_LINKS = [
+  { href: '#why', label: 'Why x407' },
+  { href: '#passport', label: 'Passports' },
+  { href: '#how', label: 'How it works' },
+  { href: '#agents', label: 'Agents' },
+  { href: '#faq', label: 'FAQ' },
+  { href: '/developers', label: 'Docs' },
+]
+
 function LandingNav() {
   return (
     <nav className="landing-nav">
@@ -62,46 +75,14 @@ function LandingNav() {
         <X407Mark size={24} />
         <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.3px' }}>x407</span>
       </div>
+      <div className="landing-nav-links">
+        {NAV_LINKS.map(l => l.href.startsWith('#')
+          ? <a key={l.href} href={l.href}>{l.label}</a>
+          : <Link key={l.href} href={l.href}>{l.label}</Link>
+        )}
+      </div>
       <Link href="/marketplace" className="btn-primary">Open app</Link>
     </nav>
-  )
-}
-
-function DashPreview({ templates }: { templates: { emoji?: string; name: string; rating: number; price: string }[] }) {
-  const navItems = ['BotMart', 'My Agents', 'Create Agent', 'Wallet', 'Transactions']
-  return (
-    <div className="dash-preview">
-      <div className="dash-preview-bar">
-        <div className="dash-preview-dots"><span /><span /><span /></div>
-        <div className="dash-preview-url"><span>x407.dev/botmart</span></div>
-      </div>
-      <div className="dash-preview-body">
-        <div className="dash-mini-sidebar">
-          {navItems.map((item, i) => (
-            <div key={item} className={`dash-mini-item ${i === 0 ? 'on' : ''}`}>
-              <span className="dash-mini-dot" />{item}
-            </div>
-          ))}
-        </div>
-        <div className="dash-mini-content">
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink)', marginBottom: 12 }}>BotMart</div>
-          <div className="dash-mini-grid">
-            {templates.slice(0, 6).map(t => (
-              <div key={t.name} className="dash-mini-card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-                  <span style={{ fontSize: 13 }}>{t.emoji}</span>
-                  <span style={{ fontSize: 9.5, fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 8.5, color: 'var(--yellow)' }}>★ {t.rating}</span>
-                  <span style={{ fontSize: 8.5, color: 'var(--ink3)', fontFamily: 'var(--mono)' }}>{t.price}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -142,15 +123,19 @@ const AGENT_BRANDS: { name: string; icon?: IconType }[] = [
 
 // Every step here is the real integration surface as it exists today (plain HTTP
 // API, in-memory state, key generated client-side) — no invented CLI or SDK.
-const EQUIP_PROMPT = `Equip my AI agent with an x407 wallet and spend rules so it can pay for its own APIs.
+const EQUIP_STEPS: { text: string; cmd?: string }[] = [
+  { text: 'Boot x407 locally',
+    cmd: 'git clone https://github.com/Vossaldrin/x407 && cd x407 && ./start-x407.sh' },
+  { text: "Generate the agent's wallet on your machine — the private key never leaves it",
+    cmd: `node -e "const{Wallet}=require('ethers');const w=Wallet.createRandom();console.log(w.address,w.privateKey)"` },
+  { text: 'Register the agent with your rules',
+    cmd: `POST http://localhost:8000/agents  {"name":"my-agent","address":"<WALLET_ADDRESS>","chain":"Base","dailyLimit":25,"perTxLimit":5,"actions":["pay_api","fetch_data"]}` },
+  { text: 'Fund that address with a few dollars of USDC on Base mainnet' },
+  { text: 'Pay per request — read the HTTP 402 quote, send exactly that USDC from the agent’s wallet, retry with the tx hash in X-PAYMENT-TX. Limits are checked before anything settles.' },
+]
 
-1. Boot x407 locally: git clone https://github.com/Vossaldrin/x407 && cd x407 && ./start-x407.sh
-2. Generate the agent's wallet locally — the private key must never leave this machine:
-   node -e "const{Wallet}=require('ethers');const w=Wallet.createRandom();console.log(w.address,w.privateKey)"
-3. Register the agent with my rules — POST http://localhost:8000/agents with:
-   {"name":"my-agent","address":"<WALLET_ADDRESS>","chain":"Base","dailyLimit":25,"perTxLimit":5,"actions":["pay_api","fetch_data"],"expiry":"2026-12-31"}
-4. Fund that address with a few dollars of USDC on Base mainnet.
-5. To buy a resource: GET its URL, read the HTTP 402 quote ("accepts": amount, asset, payTo), send exactly that USDC amount from the agent's wallet, then retry the request with the tx hash in X-PAYMENT-TX to unlock it. Every payment is checked against the limits from step 3 before it settles.`
+const EQUIP_PROMPT = 'Equip my AI agent with an x407 wallet and spend rules so it can pay for its own APIs.\n\n'
+  + EQUIP_STEPS.map((s, i) => `${i + 1}. ${s.text}${s.cmd ? `:\n   ${s.cmd}` : '.'}`).join('\n')
 
 function EquipSnippet() {
   const [copied, setCopied] = useState(false)
@@ -163,12 +148,25 @@ function EquipSnippet() {
   return (
     <div className="equip-card">
       <div className="equip-head">
-        <span>Copy and send this to your agent</span>
+        <div>
+          <div className="equip-overline">One prompt, any agent</div>
+          <span>Copy and send this to your agent</span>
+        </div>
         <button className="equip-copy-btn" onClick={copy}>
           {copied ? <Check size={13} /> : <Copy size={13} />}{copied ? 'Copied' : 'Copy'}
         </button>
       </div>
-      <pre>{EQUIP_PROMPT}</pre>
+      <ol className="equip-steps">
+        {EQUIP_STEPS.map((s, i) => (
+          <li key={i} className="equip-step">
+            <span className="equip-step-num">{i + 1}</span>
+            <div className="equip-step-body">
+              <div className="equip-step-text">{s.text}</div>
+              {s.cmd && <code className="equip-step-cmd">{s.cmd}</code>}
+            </div>
+          </li>
+        ))}
+      </ol>
       <div className="equip-brands">
         <span className="equip-brands-label">Works with any agent</span>
         {AGENT_BRANDS.map(({ name, icon: Icon }) => (
@@ -241,7 +239,7 @@ function StatsBar() {
 function FeaturesSection() {
   const { ref, visible } = useReveal<HTMLDivElement>()
   return (
-    <div ref={ref} className={`landing-section reveal ${visible ? 'in-view' : ''}`}>
+    <div id="why" ref={ref} className={`landing-section reveal ${visible ? 'in-view' : ''}`}>
       <div className="landing-section-head">
         <h2>Why not just an API key?</h2>
         <p>No card on file — your agent funds itself from its own wallet. A cap on every payment, checked before it settles. A receipt on-chain, for every single one.</p>
@@ -259,27 +257,33 @@ function FeaturesSection() {
   )
 }
 
-function CompareRow({ without, withX }: { without: string; withX: string }) {
+function PassportSection() {
   const { ref, visible } = useReveal<HTMLDivElement>()
   return (
-    <Fragment>
-      <div ref={ref} className={`compare-cell compare-without reveal ${visible ? 'in-view' : ''}`}><X size={14} /><span>{without}</span></div>
-      <div className={`compare-cell compare-with reveal ${visible ? 'in-view' : ''}`}><Check size={14} /><span>{withX}</span></div>
-    </Fragment>
-  )
-}
-
-function ComparisonSection() {
-  const { ref, visible } = useReveal<HTMLDivElement>()
-  return (
-    <div ref={ref} className={`landing-section reveal ${visible ? 'in-view' : ''}`} style={{ paddingTop: 0 }}>
-      <div className="landing-section-head">
-        <h2>The old way vs. x407.</h2>
-      </div>
-      <div className="compare-table">
-        <div className="compare-head compare-without">Without x407</div>
-        <div className="compare-head compare-with">With x407</div>
-        {COMPARISON.map((row, i) => <CompareRow key={i} without={row.without} withX={row.withX} />)}
+    <div id="passport" ref={ref} className={`landing-section landing-section-wide reveal ${visible ? 'in-view' : ''}`} style={{ paddingTop: 0 }}>
+      <div className="split-section">
+        <div className="split-text">
+          <div className="landing-section-head" style={{ textAlign: 'left', margin: 0 }}>
+            <h2>What a passport<br />buys your agent.</h2>
+            <p style={{ margin: '0 0 24px' }}>
+              An agent with its own wallet and a verifiable identity is a new primitive.
+              The passport is where it comes together: one wallet, one rule set, one
+              track record — scoped to one agent.
+            </p>
+          </div>
+          <Link href="/connect" className="btn-primary">Issue one to your agent <ArrowRight size={14} /></Link>
+        </div>
+        <div className="split-visual">
+          <div className={`utility-grid ${visible ? 'stagger' : ''}`}>
+            {PASSPORT_UTILITIES.map((u, i) => (
+              <div key={i} className="feature-card">
+                <div className="feature-icon">{u.icon}</div>
+                <div className="feature-title">{u.title}</div>
+                <div className="feature-desc">{u.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -289,7 +293,7 @@ function StepsSection() {
   const { ref, visible } = useReveal<HTMLDivElement>()
   const { ref: progressRef, progress } = useScrollProgress<HTMLDivElement>()
   return (
-    <div ref={ref} className={`landing-section landing-section-wide reveal ${visible ? 'in-view' : ''}`} style={{ paddingTop: 0 }}>
+    <div id="how" ref={ref} className={`landing-section landing-section-wide reveal ${visible ? 'in-view' : ''}`} style={{ paddingTop: 0 }}>
       <div className="split-section">
         <div className="split-text">
           <div className="landing-section-head" style={{ textAlign: 'left', margin: 0 }}>
@@ -399,13 +403,27 @@ function AgentStrip({ templates }: { templates: { id: string; emoji?: string; na
     </Link>
   )
 
+  // Interleave the hireable agents with bring-your-own brand tiles — the
+  // marquee reads "these agents ship here, and yours belongs here too."
+  const brandTile = ({ name, icon: Icon }: { name: string; icon?: IconType }, key: string) => (
+    <Link key={key} href="/connect" className="agent-strip-card agent-strip-brand" style={{ textDecoration: 'none' }}>
+      {Icon ? <Icon size={24} /> : <span style={{ fontSize: 17, fontWeight: 700, fontFamily: 'var(--mono)' }}>{name}</span>}
+      <span className="agent-strip-brand-name">{name}</span>
+      <span className="agent-strip-brand-cta">bring yours →</span>
+    </Link>
+  )
+  const run = (prefix: string) => [
+    ...templates.map(t => card(t, `${prefix}-${t.id}`)),
+    ...AGENT_BRANDS.map(b => brandTile(b, `${prefix}-${b.name}`)),
+  ]
+
   return (
-    <div ref={ref} className={`agent-strip-wrap reveal ${visible ? 'in-view' : ''}`}>
-      <div className="agent-strip-head">Featured agents</div>
+    <div id="agents" ref={ref} className={`agent-strip-wrap reveal ${visible ? 'in-view' : ''}`}>
+      <div className="agent-strip-head">Featured agents — and room for yours</div>
       <div className="agent-strip-viewport">
         <div className="agent-strip-marquee">
-          {templates.map(t => card(t, `a-${t.id}`))}
-          {templates.map(t => card(t, `b-${t.id}`))}
+          {run('a')}
+          {run('b')}
         </div>
       </div>
     </div>
@@ -445,12 +463,19 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 function FaqSection() {
   const { ref, visible } = useReveal<HTMLDivElement>()
   return (
-    <div ref={ref} className={`landing-section reveal ${visible ? 'in-view' : ''}`} style={{ maxWidth: 720 }}>
-      <div className="landing-section-head" style={{ marginBottom: 40 }}>
-        <h2>Questions worth asking.</h2>
-      </div>
-      <div className="faq-list">
-        {FAQ.map(f => <FaqItem key={f.q} q={f.q} a={f.a} />)}
+    <div id="faq" ref={ref} className={`landing-section landing-section-wide reveal ${visible ? 'in-view' : ''}`}>
+      <div className="split-section">
+        <div className="split-text">
+          <div className="landing-section-head" style={{ textAlign: 'left', margin: 0 }}>
+            <h2>Questions<br />worth asking.</h2>
+            <p style={{ margin: 0 }}>Straight answers, including about what isn&apos;t built yet.</p>
+          </div>
+        </div>
+        <div className="split-visual">
+          <div className="faq-list">
+            {FAQ.map(f => <FaqItem key={f.q} q={f.q} a={f.a} />)}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -508,15 +533,12 @@ export default function LandingPage() {
           </div>
           <EquipSnippet />
           <ProtocolSnippet />
-          {/* Wrapper takes the entrance animation so the preview itself is free to tilt —
-              cardIn's fill-mode would otherwise pin the transform. */}
-          <div><DashPreview templates={marketplace} /></div>
         </div>
       </div>
 
       <StatsBar />
       <FeaturesSection />
-      <ComparisonSection />
+      <PassportSection />
       <StepsSection />
       <LiveActivitySection />
       <AgentStrip templates={marketplace} />
@@ -525,15 +547,39 @@ export default function LandingPage() {
       <FinalCta />
 
       <footer className="landing-footer">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <X407Mark size={18} />
-          <span style={{ color: 'var(--ink2)', fontWeight: 500 }}>x407</span>
-          <span style={{ color: 'var(--line2)' }}>·</span>
-          <span>v0.1.0 early access</span>
+        <div className="footer-grid">
+          <div className="footer-brand">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
+              <X407Mark size={26} />
+              <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink)' }}>x407</span>
+            </div>
+            <p>Wallets, spend rules, and HTTP 402 payments for autonomous agents. Real USDC, settled on Base.</p>
+            <span className="footer-note">v0.1.0 early access</span>
+          </div>
+          <div className="footer-col">
+            <h4>Product</h4>
+            <Link href="/marketplace">BotMart</Link>
+            <Link href="/connect">Connect an agent</Link>
+            <Link href="/create">Create an agent</Link>
+            <Link href="/wallet">Wallet</Link>
+            <Link href="/transactions">Transactions</Link>
+          </div>
+          <div className="footer-col">
+            <h4>Protocol</h4>
+            <a href="#why">Why x407</a>
+            <a href="#passport">Agent passports</a>
+            <a href="#how">How it works</a>
+            <a href="#faq">FAQ</a>
+          </div>
+          <div className="footer-col">
+            <h4>Developers</h4>
+            <Link href="/developers">Docs</Link>
+            <a href="https://github.com/Vossaldrin/x407" target="_blank" rel="noreferrer">GitHub ↗</a>
+            <a href="https://www.x402.org" target="_blank" rel="noreferrer">x402 standard ↗</a>
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 20 }}>
-          <Link href="/developers" style={{ color: 'inherit', textDecoration: 'none' }}>Docs</Link>
-          {['Status', 'Privacy', 'Terms'].map(l => <span key={l}>{l}</span>)}
+        <div className="footer-bottom">
+          <span>© 2026 x407 · early access — wallets, payments, and swaps are real; persistence and on-chain contracts are on the roadmap.</span>
         </div>
       </footer>
     </div>
