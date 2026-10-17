@@ -269,6 +269,10 @@ class AgentCreate(BaseModel):
     ownerWallet: Optional[str] = None
     color: str = "emerald"
     customRules: Optional[str] = None
+    visitorId: Optional[str] = None  # per-browser id (no login system) so a shared
+                                      # demo link doesn't mix one visitor's agents
+                                      # into another's — not a security boundary,
+                                      # just UI isolation between simultaneous visitors
 
 class SignedAction(BaseModel):
     """Proves the caller controls the agent's wallet (or ownerWallet) for one
@@ -294,6 +298,7 @@ class HireRequest(BaseModel):
     expiry: str = "2026-12-31"
     ownerWallet: Optional[str] = None
     actions: Optional[List[str]] = None
+    visitorId: Optional[str] = None
 
 class PaymentRequest(BaseModel):
     agentId: str
@@ -419,6 +424,7 @@ def build_agent(body: AgentCreate, template_id: str = None) -> dict:
         "createdAt": datetime.utcnow().isoformat()[:10],
         "customRules": body.customRules or "",
         "identityVerified": False,
+        "visitorId": body.visitorId,
     }
 
 def safe(agent: dict) -> dict:
@@ -463,6 +469,7 @@ def hire_agent(body: HireRequest):
         actions=body.actions or tpl["defaultActions"],
         ownerWallet=body.ownerWallet,
         color=tpl["color"],
+        visitorId=body.visitorId,
     )
     agent = build_agent(agent_body, template_id=body.templateId)
     agent["emoji"] = tpl.get("emoji", "🤖")
@@ -473,8 +480,11 @@ def hire_agent(body: HireRequest):
 
 # ── Agents ────────────────────────────────────────────────────────────────────
 @app.get("/agents")
-def list_agents():
-    return {"agents": [safe(a) for a in agents_db.values()]}
+def list_agents(visitorId: Optional[str] = None):
+    agents = agents_db.values()
+    if visitorId:
+        agents = [a for a in agents if a.get("visitorId") == visitorId]
+    return {"agents": [safe(a) for a in agents]}
 
 @app.post("/agents", status_code=201)
 def create_agent(body: AgentCreate):
@@ -1267,7 +1277,7 @@ def agent_chat(body: ChatRequest):
 
 # ── Transactions ──────────────────────────────────────────────────────────────
 @app.get("/transactions")
-def list_transactions(type: Optional[str] = None, agentId: Optional[str] = None):
+def list_transactions(type: Optional[str] = None, agentId: Optional[str] = None, visitorId: Optional[str] = None):
     txs = transactions_db
     if type == "blocked":
         txs = [t for t in txs if t["status"] == "blocked"]
@@ -1275,6 +1285,12 @@ def list_transactions(type: Optional[str] = None, agentId: Optional[str] = None)
         txs = [t for t in txs if t["type"] == type and t["status"] != "blocked"]
     if agentId:
         txs = [t for t in txs if t["agentId"] == agentId]
+    if visitorId:
+        # transactions don't carry visitorId directly — join through the owning
+        # agent, same isolation rule as GET /agents (UI isolation, not a security
+        # boundary, since there's no login system behind any of this).
+        own_ids = {a["id"] for a in agents_db.values() if a.get("visitorId") == visitorId}
+        txs = [t for t in txs if t["agentId"] in own_ids]
     return {"transactions": txs}
 
 # ── Wallet ────────────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 import { Fragment, useEffect, useRef, useState, MouseEvent } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { useStore } from '@/lib/store'
+import { useStore, Transaction } from '@/lib/store'
 import { useReveal } from '@/lib/use-reveal'
 import { useScrollProgress } from '@/lib/use-scroll-progress'
 import { useCountUp } from '@/lib/use-count-up'
@@ -16,6 +16,8 @@ const CoreOrb = dynamic(() => import('@/components/brand/CoreOrb'), {
   ssr: false,
   loading: () => <StaticFallback color="var(--neon)" />,
 })
+
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 const FEATURES = [
   { icon: <Wallet size={17} />, title: <>Zero credit cards<span className="feature-badge feature-badge-live">Live</span></>, desc: 'Every agent spins up its own crypto wallet on deployment — it funds its own API dependencies directly, no human card on file.' },
@@ -216,24 +218,93 @@ function StepsSection() {
   const { ref, visible } = useReveal<HTMLDivElement>()
   const { ref: progressRef, progress } = useScrollProgress<HTMLDivElement>()
   return (
-    <div ref={ref} className={`landing-section reveal ${visible ? 'in-view' : ''}`} style={{ paddingTop: 0 }}>
-      <div className="landing-section-head" style={{ textAlign: 'left', margin: '0 0 24px' }}>
-        <h2>From zero to deployed<br />in three steps.</h2>
-      </div>
-      <div ref={progressRef} className="landing-steps">
-        <div className="landing-steps-line">
-          <div className="landing-steps-line-fill" style={{ height: `${progress * 100}%` }} />
-        </div>
-        {STEPS.map((step, i) => (
-          <div key={step.n} className={`landing-step ${progress > i / STEPS.length ? 'is-active' : ''}`}>
-            <div className="landing-step-num">{step.n}</div>
-            <div style={{ flex: 1 }}>
-              <div className="landing-step-title">{step.title}</div>
-              <div className="landing-step-body">{step.body}</div>
-            </div>
-            <ChevronRight size={18} color="var(--ink3)" style={{ marginTop: 4 }} />
+    <div ref={ref} className={`landing-section landing-section-wide reveal ${visible ? 'in-view' : ''}`} style={{ paddingTop: 0 }}>
+      <div className="split-section">
+        <div className="split-text">
+          <div className="landing-section-head" style={{ textAlign: 'left', margin: 0 }}>
+            <h2>From zero to deployed<br />in three steps.</h2>
+            <p style={{ margin: 0 }}>No card on file, no key to revoke later — just a wallet scoped to one agent, funded and limited by you.</p>
           </div>
-        ))}
+        </div>
+        <div className="split-visual">
+          <div ref={progressRef} className="landing-steps">
+            <div className="landing-steps-line">
+              <div className="landing-steps-line-fill" style={{ height: `${progress * 100}%` }} />
+            </div>
+            {STEPS.map((step, i) => (
+              <div key={step.n} className={`landing-step ${progress > i / STEPS.length ? 'is-active' : ''}`}>
+                <div className="landing-step-num">{step.n}</div>
+                <div style={{ flex: 1 }}>
+                  <div className="landing-step-title">{step.title}</div>
+                  <div className="landing-step-body">{step.body}</div>
+                </div>
+                <ChevronRight size={18} color="var(--ink3)" style={{ marginTop: 4 }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LiveActivitySection() {
+  const { ref, visible } = useReveal<HTMLDivElement>()
+  const [txs, setTxs] = useState<Transaction[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Intentionally unscoped (no visitorId) — this is the public marketing page
+    // showing real activity across all demo agents, not any one visitor's own.
+    const load = () => fetch(`${API}/transactions`)
+      .then(r => r.json())
+      .then(d => setTxs((d.transactions || []).slice(0, 6)))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+    load()
+    const id = setInterval(load, 6000)
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <div ref={ref} className={`landing-section landing-section-wide reveal ${visible ? 'in-view' : ''}`} style={{ paddingTop: 0 }}>
+      <div className="split-section">
+        <div className="split-text">
+          <div className="landing-section-head" style={{ textAlign: 'left', margin: 0 }}>
+            <h2>Every payment, settled the same way.</h2>
+            <p style={{ margin: '0 0 24px' }}>Quote, sign, verify, settle — the same rail whether it's $0.02 for a data source or a real swap.</p>
+          </div>
+          <ol className="flow-list">
+            <li><strong>Quote</strong> — the resource returns a real HTTP 402 with price, asset, and recipient.</li>
+            <li><strong>Sign</strong> — the agent's own wallet signs the transfer, locally in the browser. The key never reaches our backend.</li>
+            <li><strong>Verify</strong> — the backend checks the transaction on-chain before marking anything settled.</li>
+            <li><strong>Settle</strong> — logged with a real hash, checkable on Basescan.</li>
+          </ol>
+        </div>
+        <div className="split-visual">
+          <div className="live-feed-panel">
+            <div className="live-feed-head"><span className="status-pulse" /> Live agent activity</div>
+            {loading ? (
+              <div className="live-feed-empty">Loading…</div>
+            ) : txs.length === 0 ? (
+              <div className="live-feed-empty">No payments yet on this demo backend — hire an agent and be the first.</div>
+            ) : txs.map(tx => (
+              <div key={tx.id} className="live-feed-item">
+                <div className="live-feed-item-top">
+                  <span className="live-feed-item-name">{tx.agentName} · {tx.name}</span>
+                  <span className="live-feed-item-amount" style={{ color: tx.status === 'blocked' ? 'var(--rose)' : tx.type === 'in' ? 'var(--green)' : 'var(--ink2)' }}>
+                    {tx.status === 'blocked' ? 'blocked' : `${tx.type === 'in' ? '+' : '-'}$${tx.amount.toFixed(2)}`}
+                  </span>
+                </div>
+                <div className="live-feed-item-meta">
+                  {tx.hash
+                    ? <a href={`https://basescan.org/tx/${tx.hash}`} target="_blank" rel="noreferrer">{tx.hash.slice(0, 10)}… ↗</a>
+                    : (tx.reason || tx.status)} · {tx.timestamp}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -367,6 +438,7 @@ export default function LandingPage() {
       <FeaturesSection />
       <ComparisonSection />
       <StepsSection />
+      <LiveActivitySection />
       <AgentStrip templates={marketplace} />
       <BuiltOnRow />
       <FaqSection />

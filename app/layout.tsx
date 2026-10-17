@@ -2,8 +2,8 @@
 import './globals.css'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState, useEffect } from 'react'
-import { StoreProvider } from '@/lib/store'
+import { useState, useEffect, useRef } from 'react'
+import { StoreProvider, useStore } from '@/lib/store'
 import { connectWallet } from '@/lib/wallet-connect'
 import { X407Mark } from '@/components/brand/X407Mark'
 import { Store, Bot, Plus, Wallet as WalletIcon, ArrowLeftRight, Bell, Terminal } from 'lucide-react'
@@ -25,6 +25,55 @@ function isActive(path: string, href: string): boolean {
 function pageLabelFor(path: string): string {
   const match = NAV_ITEMS.find(item => isActive(path, item.href))
   return match?.label || 'x407'
+}
+
+function NotificationBell() {
+  const { transactions, unreadCount, markNotificationsRead } = useStore()
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [])
+
+  const toggle = () => {
+    setOpen(o => !o)
+    if (!open) markNotificationsRead()
+  }
+
+  const recent = transactions.slice(0, 8)
+
+  return (
+    <div className="bell-wrap" ref={wrapRef}>
+      <button className="bell-btn" title="Notifications" aria-label="Notifications" onClick={toggle}>
+        <Bell size={14} />
+        {unreadCount > 0 && <span className="bell-dot" />}
+      </button>
+      {open && (
+        <div className="bell-dropdown">
+          {recent.length === 0 ? (
+            <div className="bell-dropdown-empty">No agent activity yet.</div>
+          ) : recent.map(tx => (
+            <div key={tx.id} className="bell-item">
+              <div className="bell-item-top">
+                <span className="bell-item-name">{tx.agentName} · {tx.name}</span>
+                <span className="bell-item-amount" style={{ color: tx.status === 'blocked' ? 'var(--rose)' : tx.type === 'in' ? 'var(--green)' : 'var(--ink2)' }}>
+                  {tx.status === 'blocked' ? 'blocked' : `${tx.type === 'in' ? '+' : '-'}$${tx.amount.toFixed(2)}`}
+                </span>
+              </div>
+              <div className="bell-item-meta">
+                {tx.status === 'blocked' ? (tx.reason || 'blocked') : tx.hash ? `${tx.hash.slice(0, 10)}…` : tx.status} · {tx.timestamp}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -85,10 +134,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         <div className="top-breadcrumb">
           <div className="breadcrumb-text">x407 <span>›</span> <span className="breadcrumb-current">{pageLabelFor(path)}</span></div>
           <div className="top-right">
-            <button className="bell-btn" title="Notifications" aria-label="Notifications">
-              <Bell size={14} />
-              <span className="bell-dot" />
-            </button>
+            <NotificationBell />
             <div className="status-chip"><span className="status-pulse" /> <span className="status-chip-text">All systems operational</span></div>
           </div>
         </div>

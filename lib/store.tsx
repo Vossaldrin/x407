@@ -1,8 +1,21 @@
 'use client'
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react'
 import { generateAgentWallet } from './x407-agent-pay'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+// Per-browser id (no login system) so a shared demo link doesn't mix one
+// visitor's agents/transactions into another's. UI isolation only, not a
+// security boundary — only ever called client-side, inside effects/callbacks.
+function getVisitorId(): string {
+  if (typeof window === 'undefined') return ''
+  let id = localStorage.getItem('x407-visitor-id')
+  if (!id) {
+    id = crypto.randomUUID()
+    localStorage.setItem('x407-visitor-id', id)
+  }
+  return id
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export type Chain = 'Base' | 'Ethereum' | 'Arbitrum' | 'Optimism' | 'Polygon'
@@ -147,6 +160,8 @@ interface Store {
   tokens: Token[]
   marketplace: MarketplaceTemplate[]
   loading: boolean
+  unreadCount: number
+  markNotificationsRead: () => void
   addAgent: (a: Agent) => void
   updateAgent: (id: string, patch: Partial<Agent>) => void
   refreshAgents: () => Promise<void>
@@ -161,6 +176,7 @@ interface Store {
 const Ctx = createContext<Store>({
   agents: SEED_AGENTS, transactions: SEED_TXS, tokens: SEED_TOKENS,
   marketplace: [], loading: false,
+  unreadCount: 0, markNotificationsRead: () => {},
   addAgent: () => {}, updateAgent: () => {},
   refreshAgents: async () => {}, refreshTransactions: async () => {},
   hireAgent: async () => null, createAgent: async () => null,
@@ -177,21 +193,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const refreshAgents = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/agents`)
+      const res = await fetch(`${API}/agents?visitorId=${encodeURIComponent(getVisitorId())}`)
       if (!res.ok) return
       const data = await res.json()
       setAgents(data.agents || [])
     } catch { /* backend offline — keep seed data */ }
   }, [])
 
+  const [unreadCount, setUnreadCount] = useState(0)
+  const seenTxIds = useRef<Set<string> | null>(null) // null until first real load lands
+
   const refreshTransactions = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/transactions`)
+      const res = await fetch(`${API}/transactions?visitorId=${encodeURIComponent(getVisitorId())}`)
       if (!res.ok) return
       const data = await res.json()
-      setTransactions(data.transactions || [])
+      const txs: Transaction[] = data.transactions || []
+      if (seenTxIds.current) {
+        const newOnes = txs.filter(t => !seenTxIds.current!.has(t.id))
+        if (newOnes.length > 0) setUnreadCount(c => c + newOnes.length)
+      }
+      seenTxIds.current = new Set(txs.map(t => t.id))
+      setTransactions(txs)
     } catch { /* offline */ }
   }, [])
+
+  const markNotificationsRead = useCallback(() => setUnreadCount(0), [])
 
   const loadMarketplace = useCallback(async () => {
     try {
@@ -207,6 +234,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     Promise.all([refreshAgents(), refreshTransactions(), loadMarketplace()])
       .finally(() => setLoading(false))
   }, [refreshAgents, refreshTransactions, loadMarketplace])
+
+  // Light polling so activity from this agent (or, in a shared demo, this
+  // visitor's own other tabs) shows up without a manual reload — also what
+  // drives the unread notification count.
+  useEffect(() => {
+    const id = setInterval(() => { refreshAgents(); refreshTransactions() }, 8000)
+    return () => clearInterval(id)
+  }, [refreshAgents, refreshTransactions])
 
   const addAgent    = useCallback((a: Agent) => setAgents(p => [a, ...p]), [])
   const updateAgent = useCallback((id: string, patch: Partial<Agent>) =>
@@ -224,7 +259,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const res = await fetch(`${API}/marketplace/hire`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ templateId, chain, expiry, address: wallet.address, ...overrides }),
+        body: JSON.stringify({ templateId, chain, expiry, address: wallet.address, visitorId: getVisitorId(), ...overrides }),
       })
       if (!res.ok) return null
       const data = await res.json()
@@ -239,7 +274,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const res = await fetch(`${API}/agents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...body, address: wallet.address }),
+        body: JSON.stringify({ ...body, address: wallet.address, visitorId: getVisitorId() }),
       })
       if (!res.ok) return null
       const data = await res.json()
@@ -304,6 +339,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{
       agents, transactions, tokens, marketplace, loading,
+      unreadCount, markNotificationsRead,
       addAgent, updateAgent, refreshAgents, refreshTransactions,
       hireAgent, createAgent, quotePayment, executePayment, simulatePayment,
     }}>
