@@ -7,6 +7,7 @@ import { useReveal } from '@/lib/use-reveal'
 import { useScrollProgress } from '@/lib/use-scroll-progress'
 import { useCountUp } from '@/lib/use-count-up'
 import { X407Mark } from '@/components/brand/X407Mark'
+import LogoCard3D from '@/components/brand/LogoCard3D'
 import { StaticFallback } from '@/components/agents/OrbFallback'
 import { Lock, Zap, BarChart3, ArrowRight, ChevronRight, Star, Wallet, ShieldCheck, Globe, Check, X, ChevronDown, Copy, Fingerprint, CircleDollarSign, Bot, ArrowLeftRight } from 'lucide-react'
 import { SiEthereum, SiAnthropic, SiCircle, SiClaude, SiX, SiGooglegemini, SiDeepseek, SiMistralai, SiPerplexity } from 'react-icons/si'
@@ -120,6 +121,9 @@ const FLOATERS: { icon: JSX.Element; style: React.CSSProperties; dur: number; de
   { icon: <Bot size={18} />,              style: { top: '11%', right: '15%' }, dur: 12,   delay: 2 },
   { icon: <ShieldCheck size={18} />,      style: { top: '70%', right: '11%' }, dur: 9.5,  delay: 1.6 },
   { icon: <ArrowLeftRight size={18} />,   style: { top: '44%', left: '3%' },   dur: 11.5, delay: 2.4 },
+  // eslint-disable-next-line @next/next/no-img-element
+  { icon: <img src="/brand/logo-card-double-arc.png" alt="" style={{ width: 24, height: 24, objectFit: 'contain' }} />,
+    style: { top: '82%', left: '15%' }, dur: 10.5, delay: 3 },
 ]
 
 function HeroFloaters() {
@@ -466,6 +470,7 @@ function FinalCta() {
   const { ref, visible } = useReveal<HTMLDivElement>()
   return (
     <div ref={ref} className={`landing-cta reveal ${visible ? 'in-view' : ''}`}>
+      <div style={{ marginBottom: 28 }}><LogoCard3D size={150} /></div>
       <h2>Your agent's first payment is<br />one click away.</h2>
       <p>Hire an agent with its own on-chain wallet — a real payment, checked against real limits, settled on Base.</p>
       <Link href="/marketplace" className="btn-primary-lg">Hire an agent on BotMart <ArrowRight size={15} /></Link>

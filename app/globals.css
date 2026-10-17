@@ -363,6 +363,12 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
   padding: 20px; position: relative; overflow: hidden;
   box-shadow: 0 0 40px rgba(200,245,66,0.08);
 }
+/* Holographic-stamp brand mark in the passport's corner */
+.passport-card::after {
+  content: ''; position: absolute; width: 74px; height: 74px; right: -8px; bottom: -10px;
+  background: url('/brand/logo-card-double-arc.png') center / contain no-repeat;
+  opacity: 0.06; pointer-events: none; transform: rotate(-10deg);
+}
 .passport-stripe { position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--neon), transparent); }
 .passport-label { font-size: 10px; letter-spacing: 0.15em; color: var(--neon); text-transform: uppercase; margin-bottom: 7px; font-family: var(--mono); }
 .passport-name { font-size: 17px; font-weight: 600; color: var(--ink); margin-bottom: 16px; letter-spacing: -0.3px; }
@@ -570,7 +576,7 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
   background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg);
   padding: 22px; transition: all 0.3s cubic-bezier(.4,0,.2,1);
 }
-.feature-card:hover { border-color: var(--neon); transform: translateY(-3px); box-shadow: 0 12px 30px rgba(200,245,66,0.1); }
+.feature-card:hover { border-color: var(--neon); transform: perspective(800px) translateY(-3px) rotateX(2.5deg); box-shadow: 0 12px 30px rgba(200,245,66,0.1); }
 .feature-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--neon-dim); color: var(--neon); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; transition: transform 0.3s cubic-bezier(.4,0,.2,1); }
 .feature-card:hover .feature-icon { transform: scale(1.1) rotate(-4deg); }
 .feature-title { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 8px; }
@@ -619,7 +625,22 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
 .dash-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .dash-mini-card { border: 1px solid var(--line); border-radius: 10px; padding: 9px; background: var(--bg); }
 
-.landing-stats-bar { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 64px 32px; }
+.landing-stats-bar {
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 64px 32px;
+  position: relative; overflow: hidden;
+}
+/* Faint brand-card watermark drifting behind the stats */
+.landing-stats-bar::before {
+  content: ''; position: absolute; width: 340px; height: 340px; right: -60px; top: 50%;
+  background: url('/brand/logo-card-double-arc.png') center / contain no-repeat;
+  opacity: 0.045; pointer-events: none;
+  transform: translateY(-50%) rotate(-8deg);
+  animation: watermarkDrift 18s ease-in-out infinite alternate;
+}
+@keyframes watermarkDrift {
+  from { transform: translateY(-50%) rotate(-8deg); }
+  to   { transform: translateY(-54%) rotate(-3deg); }
+}
 .landing-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; max-width: 900px; margin: 0 auto; text-align: center; }
 .landing-stat-value { font-family: var(--mono); font-size: 30px; font-weight: 700; color: var(--neon); letter-spacing: -0.03em; margin-bottom: 4px; text-shadow: 0 0 20px rgba(200,245,66,0.25); }
 .landing-stat-label { font-size: 12.5px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -835,7 +856,7 @@ small, .caption { font-size: 0.8125rem; color: var(--ink2); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-gradient, .hero-glow-follow, .landing-root::before, .landing-root::after, .agent-strip-marquee, .x407-mark-glow { animation: none !important; }
+  .hero-gradient, .hero-glow-follow, .landing-root::before, .landing-root::after, .agent-strip-marquee, .x407-mark-glow, .landing-stats-bar::before, .hero-floater { animation: none !important; }
   .mkt-card, .reveal, .stagger > *, .hero-content > * {
     animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important;
   }
