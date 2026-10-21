@@ -165,8 +165,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
         <title>x407 — Identity & Wallet Rail for Autonomous Agents</title>
-        <meta name="description" content="Hire and deploy autonomous AI agents" />
+        <meta name="description" content="Give your agent a wallet, spend rules, and a verifiable identity. Real HTTP 402 payments in USDC on Base — for any agent that speaks HTTP." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta property="og:title" content="x407 — Give your agent a wallet. Keep the limits." />
+        <meta property="og:description" content="Wallets, spend rules, and HTTP 402 payments for autonomous agents. Real USDC, settled on Base." />
+        <meta property="og:image" content="https://x407-alpha.vercel.app/brand/social-card.png" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://x407-alpha.vercel.app/brand/social-card.png" />
         <link rel="icon" type="image/png" href="/brand/favicon-64.png" />
         <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
       </head>

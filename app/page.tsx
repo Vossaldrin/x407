@@ -19,7 +19,7 @@ const FEATURES = [
   { icon: <Zap size={17} />, title: <>Pay-per-action micro-payments<span className="feature-badge feature-badge-live">Live</span></>, desc: 'Agents pay per API call, per inference job, or per swap — quoted and settled in seconds over real on-chain USDC, verified on Base.' },
   { icon: <BarChart3 size={17} />, title: <>Full audit trail<span className="feature-badge feature-badge-live">Live</span></>, desc: 'Every transaction — confirmed, pending, or blocked — is logged with a real transaction hash you can verify yourself on Basescan.' },
   { icon: <ShieldCheck size={17} />, title: <>Granular escrow<span className="feature-badge">Roadmap</span></>, desc: 'Programmable conditional payouts for multi-step agent tasks. Direct quote-and-pay is live today; escrow contracts are next.' },
-  { icon: <Globe size={17} />, title: <>Permissionless listings<span className="feature-badge">Roadmap</span></>, desc: '12 ready-made agents ship today across research, DeFi, travel, and dev tooling. An open model for third-party agent listings is planned.' },
+  { icon: <Globe size={17} />, title: <>Permissionless listings<span className="feature-badge">Roadmap</span></>, desc: 'Three focused agents ship today — DeFi, research, and dependency security — and any external bot can connect. An open model for third-party listings is planned.' },
 ]
 
 const STEPS = [

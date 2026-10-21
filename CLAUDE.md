@@ -95,7 +95,7 @@ server-side, sign/broadcast client-side). Any change touching `backend/x407.py`,
 the only files that sign or verify on-chain transactions.
 
 ### Backend route map (`backend/main.py`, ~890 lines, all routes in one file)
-- `/marketplace*` — the static 12-template catalogue + hire flow.
+- `/marketplace*` — the static 3-template catalogue (DeFi Trader, Research Bot, Dependency & Security Patch) + hire flow.
 - `/agents*` — CRUD over in-memory hired-agent records (spend limits, allowed actions, expiry — enforced here, not on-chain yet).
 - `/payments/quote`, `/payments/execute`, `/payments` — the x407 settlement flow described above.
 - `/defi/quote`, `/defi/execute`, `/defi/reason` — Uniswap V3 swap quoting/execution + AI rationale.

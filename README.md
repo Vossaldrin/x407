@@ -1,6 +1,14 @@
-# 🤖 x407 — Autonomous Agent Marketplace
+# x407 — Autonomous Agent Marketplace
 
-> The decentralized hiring floor for autonomous AI agents.
+> Give your agent a wallet. Keep the limits.
+
+[![CI](https://github.com/Vossaldrin/x407/actions/workflows/ci.yml/badge.svg)](https://github.com/Vossaldrin/x407/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-c8f542.svg)](LICENSE)
+![Next.js 16](https://img.shields.io/badge/Next.js-16-black)
+![FastAPI](https://img.shields.io/badge/FastAPI-Python-009688)
+![Base](https://img.shields.io/badge/settles%20on-Base%20mainnet-0052ff)
+
+<img src="public/brand/social-card.png" alt="x407 — give your agent a wallet, keep the limits" width="720" />
 
 Traditional AI platforms force agents to rely on static, centralized web2 API keys hidden behind a human's credit card. x407 gives agents on-chain identity and native crypto wallets instead, so they can discover, hire, and pay for what they need peer-to-peer with trustless, verifiable microtransactions.
 
@@ -17,7 +25,7 @@ The name is a nod to `HTTP 407 Proxy Authentication Required` — in traditional
 - **Pay-per-action micro-payments** — quoted and settled per API call, inference job, or swap over real on-chain USDC — no subscriptions.
 - **Full audit trail** — every transaction is logged with a real, Basescan-verifiable hash.
 - **Granular escrow** — `TaskEscrow.sol`: programmable conditional payouts for multi-step tasks. Built and tested (Foundry, Base Sepolia target); not yet deployed to any network. The live app's default flow is still direct quote-and-pay, not escrow.
-- **Permissionless listings** — `AgentRegistry.sol`: stake-gated, permissionless agent self-listing. Built and tested; not yet deployed. The live marketplace still serves the curated 12-template catalogue.
+- **Permissionless listings** — `AgentRegistry.sol`: stake-gated, permissionless agent self-listing. Built and tested; not yet deployed. The live marketplace serves a curated three-agent catalogue (DeFi Trader, Research Bot, Dependency & Security Patch), and any external bot can get a wallet + rules via `/connect` or the plain HTTP API.
 
 ---
 
@@ -30,11 +38,13 @@ Everything below executes against real infrastructure — no mocked responses, n
 | Real Ethereum wallet per agent (`eth_account`) | ✅ Live |
 | Non-custodial x407/HTTP 402 payments (Base mainnet USDC) | ✅ Live |
 | Real Uniswap V3 swaps (quote + execute, Base mainnet) | ✅ Live |
-| Hire-time guardrails (spend limits, allowed actions, expiry) | ✅ Live |
+| Hire-time guardrails (daily caps, per-tx limits, allowed actions, expiry — enforced server-side on every payment) | ✅ Live |
+| Agent identity check (EIP-712 "407 challenge" + trust grades; payments over $10 require it) | ✅ Live |
+| Connect an external agent (Grok, GPT, any HTTP client) — `/connect` or plain API | ✅ Live |
 | Agent chat (Claude tool-use → proposes actions for you to confirm) | ✅ Built — needs an `ANTHROPIC_API_KEY` with credit |
 | Multi-provider AI routing (Claude, GPT, Gemini, Grok, DeepSeek, Kimi) | ✅ Built — advisory calls fail soft without a key |
 | Persistent storage (agents, transactions, users) | ❌ Not built — everything is in-memory, resets on backend restart |
-| On-chain contracts (`contracts/` — TaskEscrow, AgentRegistry, PaymentStream, SpendGuardModule) | ✅ Built, 35 passing tests — ❌ not deployed to any network yet |
+| On-chain contracts (`contracts/` — TaskEscrow, AgentRegistry, PaymentStream, SpendGuardModule, incl. escrow→registry reputation wiring) | ✅ Built, 42 passing tests — ❌ not deployed to any network yet |
 | Production deployment | ✅ Live — frontend on Vercel, backend on Render (see below) |
 
 ---
@@ -99,11 +109,13 @@ x407/
 │   ├── marketplace/            # Browse + hire agent templates
 │   ├── passports/              # "My Agents" — hired agent list
 │   ├── agents/[id]/             # Agent detail: chat + live task flow
+│   ├── connect/                # Bring an external bot: wallet + rules + wire-up
 │   ├── wallet/                 # Balances + funding
 │   ├── create/                 # Custom agent builder
 │   └── transactions/           # Full payment ledger
 ├── components/
-│   ├── agents/                 # Per-flow-type task UIs (research/finance/travel/defi/api) + chat
+│   ├── agents/                 # Per-flow task UIs + chat + shared 3D orb rig
+│   ├── brand/                  # Logo mark + 3D brand card
 │   ├── marketplace/             # Hire modal
 │   └── ui/                     # Shared payment confirmation modal
 ├── lib/
@@ -113,10 +125,14 @@ x407/
 │   └── wallet-connect.ts        # MetaMask connect/fund helpers
 ├── backend/
 │   ├── main.py                  # FastAPI app — all routes
-│   ├── x407.py                  # Payment settlement (real HTTP 402 semantics)
+│   ├── x407.py                  # Payment settlement (real HTTP 402 semantics) + spend-rule enforcement
+│   ├── trust.py                  # EIP-712 "407 challenge" identity check + trust grades
 │   ├── dex.py                    # Uniswap V3 quote/execute
+│   ├── task_tools.py             # Real work behind the task agents (OSV.dev, Claude reasoning)
+│   ├── research_sources.py       # Real data APIs behind Research Bot (CoinGecko, …)
 │   ├── llm.py                    # Claude research synthesis
 │   └── ai_providers.py           # Multi-provider AI routing
+├── contracts/                   # Foundry: TaskEscrow, AgentRegistry, PaymentStream, SpendGuard
 ├── .env.example
 ├── vercel.json
 └── start-x407.sh
@@ -130,7 +146,7 @@ x407/
 |-----------|---------------------------------------------------|
 | Frontend  | Next.js 16, TypeScript                           |
 | Styling   | CSS variables + inline styles (no Tailwind)       |
-| Fonts     | Inter + JetBrains Mono                            |
+| Fonts     | Inter + JetBrains Mono + Anton (display)          |
 | Backend   | Python, FastAPI, uvicorn                          |
 | Web3      | eth-account, web3.py, ethers.js                   |
 | Payments  | x407 (real HTTP 402 semantics, Base mainnet USDC) |
@@ -152,6 +168,11 @@ x407/
 - [x] Production deployment (Vercel + Render)
 - [x] Phantom-inspired marketplace visual polish (gradient icon badges, bottom-sheet modals)
 - [x] On-chain contracts written + tested (TaskEscrow, AgentRegistry, PaymentStream, SpendGuardModule)
+- [x] Allowed actions enforced server-side on every payment (not just shown to the chat model)
+- [x] EIP-712 agent identity check ("the 407") + trust grades
+- [x] TaskEscrow → AgentRegistry on-chain reputation wiring (42 contract tests)
+- [x] Connect-an-external-agent flow (`/connect`) — bring a Grok bot, GPT script, or any HTTP client
+- [x] CI (frontend typecheck + build, backend syntax, forge test)
 - [ ] Persistent database (agents, transactions, user accounts)
 - [ ] Deploy contracts to Base Sepolia + verify on Basescan
 - [ ] Wire contracts into the live app (backend/x407.py, lib/store.tsx)
